@@ -51,11 +51,18 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	licenseHandler := handlers.NewLicenseHandler(db, cfg.LicenseSecret)
 
 	r.Group(func(r chi.Router) {
 		r.Route("/api", func(r chi.Router) {
 			r.Get("/", handlers.HealthCheck)
 			r.Get("/health", handlers.HealthCheck)
+
+			r.Route("/license", func(r chi.Router) {
+				r.Post("/verify", licenseHandler.VerifyLicense)
+				r.Post("/activate", licenseHandler.ActivateLicense)
+				r.Post("/deactivate", licenseHandler.DeactivateLicense)
+			})
 		})
 	})
 
