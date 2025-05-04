@@ -51,12 +51,16 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+
+	stripeHandler := handlers.NewStripeHandler(db, cfg.StripeSecret, cfg.StripeWebhookSecret)
 	licenseHandler := handlers.NewLicenseHandler(db, cfg.LicenseSecret)
 
 	r.Group(func(r chi.Router) {
 		r.Route("/api", func(r chi.Router) {
 			r.Get("/", handlers.HealthCheck)
 			r.Get("/health", handlers.HealthCheck)
+
+			r.Post("/webhooks/stripe", stripeHandler.HandleWebhook)
 
 			r.Route("/license", func(r chi.Router) {
 				r.Post("/verify", licenseHandler.VerifyLicense)
