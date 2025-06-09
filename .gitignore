@@ -1,3 +1,4 @@
 *.db
 .env
 mise.toml
+storage/data

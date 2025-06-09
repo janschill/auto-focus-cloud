@@ -23,8 +23,3 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":8080", srv.Mux))
 }
-
-// func (s *handlers.Server) health(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Fprintf(w, "%s", r.Method)
-// 	fmt.Fprintf(w, "Server running\n")
-// }
