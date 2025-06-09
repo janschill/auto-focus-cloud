@@ -1,110 +1,30 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"auto-focus.app/cloud/internal/config"
-	"auto-focus.app/cloud/internal/database"
-	"auto-focus.app/cloud/internal/handlers"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
-	"github.com/joho/godotenv"
+	"auto-focus.app/cloud/handlers"
+	"auto-focus.app/cloud/models"
+	"auto-focus.app/cloud/storage"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+	db := storage.Database{
+		"1": models.Customer{
+			Id:    "1",
+			Email: "john@example.com",
+			Licenses: []models.License{
+				{Key: "foo", Version: "1.0.0"},
+			},
+		},
 	}
+	srv := handlers.NewHttpServer(db)
 
-	cfg, err := config.New()
-	if err != nil {
-		log.Fatalf("Failed to initialize configuration: %v", err)
-	}
-
-	db, err := database.New(cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
-
-	if err := database.Migrate(cfg.DatabaseURL); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-
-	r := chi.NewRouter()
-
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://auto-focus.app", "http://localhost:*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
-
-	stripeHandler := handlers.NewStripeHandler(db, cfg.StripeSecret, cfg.StripeWebhookSecret)
-	licenseHandler := handlers.NewLicenseHandler(db, cfg.LicenseSecret)
-
-	r.Group(func(r chi.Router) {
-		r.Route("/api", func(r chi.Router) {
-			r.Get("/", handlers.HealthCheck)
-			r.Get("/health", handlers.HealthCheck)
-
-			r.Post("/webhooks/stripe", stripeHandler.HandleWebhook)
-
-			r.Route("/license", func(r chi.Router) {
-				r.Post("/verify", licenseHandler.VerifyLicense)
-				r.Post("/activate", licenseHandler.ActivateLicense)
-				r.Post("/deactivate", licenseHandler.DeactivateLicense)
-			})
-		})
-	})
-
-	server := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: r,
-	}
-
-	serverCtx, serverStopCtx := context.WithCancel(context.Background())
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-
-	go func() {
-		<-sig
-		log.Println("Shutting down server...")
-
-		shutdownCtx, _ := context.WithTimeout(serverCtx, 30*time.Second)
-		go func() {
-			<-shutdownCtx.Done()
-			if shutdownCtx.Err() == context.DeadlineExceeded {
-				log.Fatal("Graceful shutdown timed out.. forcing exit.")
-			}
-		}()
-
-		err := server.Shutdown(shutdownCtx)
-		if err != nil {
-			log.Fatal(err)
-		}
-		serverStopCtx()
-	}()
-
-	log.Printf("Server is running on port %s", cfg.Port)
-	err = server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
-
-	<-serverCtx.Done()
-	log.Println("Server stopped")
+	log.Fatal(http.ListenAndServe(":8080", srv.Mux))
 }
+
+// func (s *handlers.Server) health(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Fprintf(w, "%s", r.Method)
+// 	fmt.Fprintf(w, "Server running\n")
+// }
