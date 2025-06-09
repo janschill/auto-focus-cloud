@@ -13,6 +13,11 @@ type LicenseRequest struct {
 	AppVersion string `json:"app_version"`
 }
 
+type ValidateResponse struct {
+	Valid   bool   `json:"valid"`
+	Message string `json:"message"`
+}
+
 func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -33,13 +38,35 @@ func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	licensedCustomer := s.findLicenseCustomer(req.LicenseKey)
-	if licensedCustomer == nil {
-		writeErrorResponse(w, http.StatusNotFound, "License not found")
+	customer := s.findLicenseCustomer(req.LicenseKey)
+	if customer == nil {
+		respondWithValidation(w, false, "License not found")
+		return
+	}
+	license := findLicenseInCustomer(customer, req.LicenseKey)
+	if license.Status != models.StatusActive {
+		respondWithValidation(w, false, "License not active")
 		return
 	}
 
-	json.NewEncoder(w).Encode(licensedCustomer)
+	respondWithValidation(w, true, "License valid")
+}
+
+func findLicenseInCustomer(customer *models.Customer, licenseKey string) *models.License {
+	for _, license := range customer.Licenses {
+		if license.Key == licenseKey {
+			return &license
+		}
+	}
+	return nil
+}
+
+func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ValidateResponse{
+		Valid:   valid,
+		Message: message,
+	})
 }
 
 func (s *Server) findLicenseCustomer(licenseKey string) *models.Customer {
