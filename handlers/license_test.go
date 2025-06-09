@@ -13,12 +13,14 @@ import (
 
 func TestValidateLicense_Success(t *testing.T) {
 	// Setup test data
-	db := storage.Database{
-		"1": models.Customer{
-			Id:    "1",
-			Email: "test@example.com",
-			Licenses: []models.License{
-				{Key: "VALID-TEST-KEY", Version: "1.0.0"},
+	db := &storage.MemoryStorage{
+		Data: storage.Database{
+			"1": models.Customer{
+				Id:    "1",
+				Email: "test@example.com",
+				Licenses: []models.License{
+					{Key: "VALID-TEST-KEY", Version: "1.0.0"},
+				},
 			},
 		},
 	}
@@ -60,7 +62,7 @@ func TestValidateLicense_Success(t *testing.T) {
 
 func TestValidateLicense_LicenseNotFound(t *testing.T) {
 	// Setup empty database
-	db := storage.Database{}
+	db := &storage.MemoryStorage{}
 	server := NewHttpServer(db)
 
 	reqBody := LicenseRequest{
@@ -95,7 +97,7 @@ func TestValidateLicense_LicenseNotFound(t *testing.T) {
 }
 
 func TestValidateLicense_ValidationErrors(t *testing.T) {
-	db := storage.Database{}
+	db := &storage.MemoryStorage{}
 	server := NewHttpServer(db)
 
 	tests := []struct {
@@ -158,7 +160,7 @@ func TestValidateLicense_ValidationErrors(t *testing.T) {
 }
 
 func TestValidateLicense_InvalidJSON(t *testing.T) {
-	db := storage.Database{}
+	db := &storage.MemoryStorage{}
 	server := NewHttpServer(db)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBufferString("invalid json"))
@@ -183,7 +185,7 @@ func TestValidateLicense_InvalidJSON(t *testing.T) {
 }
 
 func TestValidateLicense_WrongHTTPMethod(t *testing.T) {
-	db := storage.Database{}
+	db := &storage.MemoryStorage{}
 	server := NewHttpServer(db)
 
 	methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
@@ -213,12 +215,14 @@ func TestValidateLicense_WrongHTTPMethod(t *testing.T) {
 }
 
 func TestValidateLicense_ContentTypeHeader(t *testing.T) {
-	db := storage.Database{
-		"1": models.Customer{
-			Id:    "1",
-			Email: "test@example.com",
-			Licenses: []models.License{
-				{Key: "TEST-KEY", Version: "1.0.0"},
+	db := &storage.MemoryStorage{
+		Data: storage.Database{
+			"1": models.Customer{
+				Id:    "1",
+				Email: "test@example.com",
+				Licenses: []models.License{
+					{Key: "TEST-KEY", Version: "1.0.0"},
+				},
 			},
 		},
 	}
@@ -243,20 +247,22 @@ func TestValidateLicense_ContentTypeHeader(t *testing.T) {
 }
 
 func TestFindLicenseCustomer(t *testing.T) {
-	db := storage.Database{
-		"1": models.Customer{
-			Id:    "1",
-			Email: "customer1@example.com",
-			Licenses: []models.License{
-				{Key: "KEY-001", Version: "1.0.0"},
-				{Key: "KEY-002", Version: "1.1.0"},
+	db := &storage.MemoryStorage{
+		Data: storage.Database{
+			"1": models.Customer{
+				Id:    "1",
+				Email: "customer1@example.com",
+				Licenses: []models.License{
+					{Key: "KEY-001", Version: "1.0.0"},
+					{Key: "KEY-002", Version: "1.1.0"},
+				},
 			},
-		},
-		"2": models.Customer{
-			Id:    "2",
-			Email: "customer2@example.com",
-			Licenses: []models.License{
-				{Key: "KEY-003", Version: "2.0.0"},
+			"2": models.Customer{
+				Id:    "2",
+				Email: "customer2@example.com",
+				Licenses: []models.License{
+					{Key: "KEY-003", Version: "2.0.0"},
+				},
 			},
 		},
 	}

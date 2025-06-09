@@ -43,14 +43,11 @@ func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) findLicenseCustomer(licenseKey string) *models.Customer {
-	for _, customer := range s.Storage {
-		for _, license := range customer.Licenses {
-			if license.Key == licenseKey {
-				return &customer
-			}
-		}
+	customer, err := s.Storage.FindCustomerByLicenseKey(licenseKey)
+	if err != nil {
+		return nil
 	}
-	return nil
+	return customer
 }
 
 func (lr LicenseRequest) validate() error {

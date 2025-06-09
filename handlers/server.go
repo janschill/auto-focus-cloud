@@ -9,10 +9,10 @@ import (
 
 type Server struct {
 	Mux     *http.ServeMux
-	Storage storage.Database
+	Storage storage.Storage
 }
 
-func NewHttpServer(db storage.Database) *Server {
+func NewHttpServer(db storage.Storage) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
