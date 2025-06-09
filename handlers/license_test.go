@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"auto-focus.app/cloud/internal/version"
 	"auto-focus.app/cloud/models"
 	"auto-focus.app/cloud/storage"
 )
@@ -23,14 +24,14 @@ func TestValidateLicense_Success(t *testing.T) {
 			},
 		},
 	}
-	
+
 	server := NewHttpServer(db)
 
 	reqBody := LicenseRequest{
 		LicenseKey: "VALID-KEY",
 		AppVersion: "1.4.11", // Compatible with 1.0.0 license
 	}
-	
+
 	body, err := json.Marshal(reqBody)
 	if err != nil {
 		t.Fatalf("Failed to marshal request: %v", err)
@@ -38,7 +39,7 @@ func TestValidateLicense_Success(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	server.ValidateLicense(w, req)
 
@@ -78,7 +79,7 @@ func TestValidateLicense_VersionIncompatible(t *testing.T) {
 		},
 		{
 			name:           "v2 license with v1 app - should fail",
-			licenseVersion: "2.0.0", 
+			licenseVersion: "2.0.0",
 			appVersion:     "1.4.11",
 			expectedValid:  false,
 			expectedMsg:    "License not valid for this app version",
@@ -91,7 +92,7 @@ func TestValidateLicense_VersionIncompatible(t *testing.T) {
 			expectedMsg:    "License valid",
 		},
 		{
-			name:           "v2 license with v2 minor - should succeed", 
+			name:           "v2 license with v2 minor - should succeed",
 			licenseVersion: "2.0.0",
 			appVersion:     "2.5.3",
 			expectedValid:  true,
@@ -119,18 +120,18 @@ func TestValidateLicense_VersionIncompatible(t *testing.T) {
 					},
 				},
 			}
-			
+
 			server := NewHttpServer(db)
 
 			reqBody := LicenseRequest{
 				LicenseKey: "TEST-KEY",
 				AppVersion: tt.appVersion,
 			}
-			
+
 			body, _ := json.Marshal(reqBody)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			w := httptest.NewRecorder()
 			server.ValidateLicense(w, req)
 
@@ -173,7 +174,7 @@ func TestValidateLicense_InvalidVersionFormats(t *testing.T) {
 		{
 			name:           "invalid license version format",
 			licenseVersion: "invalid",
-			appVersion:     "1.0.0", 
+			appVersion:     "1.0.0",
 			expectedMsg:    "Invalid version format",
 		},
 		{
@@ -203,18 +204,18 @@ func TestValidateLicense_InvalidVersionFormats(t *testing.T) {
 					},
 				},
 			}
-			
+
 			server := NewHttpServer(db)
 
 			reqBody := LicenseRequest{
 				LicenseKey: "TEST-KEY",
 				AppVersion: tt.appVersion,
 			}
-			
+
 			body, _ := json.Marshal(reqBody)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			w := httptest.NewRecorder()
 			server.ValidateLicense(w, req)
 
@@ -237,28 +238,28 @@ func TestValidateLicense_InvalidVersionFormats(t *testing.T) {
 
 func TestValidateLicense_StatusChecks(t *testing.T) {
 	tests := []struct {
-		name        string
-		status      string
+		name          string
+		status        string
 		expectedValid bool
-		expectedMsg string
+		expectedMsg   string
 	}{
 		{
-			name:        "active license",
-			status:      models.StatusActive,
+			name:          "active license",
+			status:        models.StatusActive,
 			expectedValid: true,
-			expectedMsg: "License valid",
+			expectedMsg:   "License valid",
 		},
 		{
-			name:        "suspended license", 
-			status:      models.StatusSuspended,
+			name:          "suspended license",
+			status:        models.StatusSuspended,
 			expectedValid: false,
-			expectedMsg: "License not active",
+			expectedMsg:   "License not active",
 		},
 		{
-			name:        "empty status",
-			status:      "",
+			name:          "empty status",
+			status:        "",
 			expectedValid: false,
-			expectedMsg: "License not active",
+			expectedMsg:   "License not active",
 		},
 	}
 
@@ -275,18 +276,18 @@ func TestValidateLicense_StatusChecks(t *testing.T) {
 					},
 				},
 			}
-			
+
 			server := NewHttpServer(db)
 
 			reqBody := LicenseRequest{
 				LicenseKey: "TEST-KEY",
 				AppVersion: "1.0.0",
 			}
-			
+
 			body, _ := json.Marshal(reqBody)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			w := httptest.NewRecorder()
 			server.ValidateLicense(w, req)
 
@@ -315,11 +316,11 @@ func TestValidateLicense_LicenseNotFound(t *testing.T) {
 		LicenseKey: "NON-EXISTENT-KEY",
 		AppVersion: "1.0.0",
 	}
-	
+
 	body, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	w := httptest.NewRecorder()
 	server.ValidateLicense(w, req)
 
@@ -373,7 +374,7 @@ func TestValidateLicense_RequestValidation(t *testing.T) {
 			body, _ := json.Marshal(tt.request)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			w := httptest.NewRecorder()
 			server.ValidateLicense(w, req)
 
@@ -404,7 +405,7 @@ func TestExtractMajorVersion(t *testing.T) {
 	}{
 		{
 			name:     "valid version 1.0.0",
-			version:  "1.0.0", 
+			version:  "1.0.0",
 			expected: 1,
 		},
 		{
@@ -441,8 +442,8 @@ func TestExtractMajorVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := extractMajorVersion(tt.version)
-			
+			result, err := version.ExtractMajorVersion(tt.version)
+
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("Expected error for version '%s', got none", tt.version)
@@ -461,48 +462,48 @@ func TestExtractMajorVersion(t *testing.T) {
 
 func TestIsVersionCompatible(t *testing.T) {
 	tests := []struct {
-		name            string
-		licenseVersion  string
+		name             string
+		licenseVersion   string
 		requestedVersion string
-		expected        bool
-		expectError     bool
+		expected         bool
+		expectError      bool
 	}{
 		{
-			name:            "same major version",
-			licenseVersion:  "1.0.0",
+			name:             "same major version",
+			licenseVersion:   "1.0.0",
 			requestedVersion: "1.4.11",
-			expected:        true,
+			expected:         true,
 		},
 		{
-			name:            "different major version",
-			licenseVersion:  "1.0.0",
+			name:             "different major version",
+			licenseVersion:   "1.0.0",
 			requestedVersion: "2.0.0",
-			expected:        false,
+			expected:         false,
 		},
 		{
-			name:            "exact same version",
-			licenseVersion:  "2.1.3",
+			name:             "exact same version",
+			licenseVersion:   "2.1.3",
 			requestedVersion: "2.1.3",
-			expected:        true,
+			expected:         true,
 		},
 		{
-			name:            "invalid license version",
-			licenseVersion:  "invalid",
+			name:             "invalid license version",
+			licenseVersion:   "invalid",
 			requestedVersion: "1.0.0",
-			expectError:     true,
+			expectError:      true,
 		},
 		{
-			name:            "invalid app version",
-			licenseVersion:  "1.0.0",
+			name:             "invalid app version",
+			licenseVersion:   "1.0.0",
 			requestedVersion: "invalid",
-			expectError:     true,
+			expectError:      true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := isVersionCompatible(tt.licenseVersion, tt.requestedVersion)
-			
+			result, err := version.IsCompatible(tt.licenseVersion, tt.requestedVersion)
+
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("Expected error, got none")
