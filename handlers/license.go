@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"auto-focus.app/cloud/internal/logger"
+	"auto-focus.app/cloud/models"
 )
 
 type LicenseRequest struct {
@@ -17,58 +20,63 @@ type ValidateResponse struct {
 }
 
 func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	logger.Info("License validation received", map[string]interface{}{
+		"remote_addr": r.RemoteAddr,
+		"user_agent":  r.Header.Get("User-Agent"),
+		"method":      r.Method,
+	})
+
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != "POST" {
-		writeErrorResponse(w, http.StatusMethodNotAllowed, "Only POST allowed")
+		logger.Info("Non POST request received", map[string]interface{}{})
+		writeErrorResponse(w, http.StatusMethodNotAllowed, "only POST allowed")
 		return
 	}
 	var req LicenseRequest
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&req); err != nil {
-		writeErrorResponse(w, http.StatusBadRequest, "Empty body")
+		logger.Info("Empty body request received", map[string]interface{}{})
+		writeErrorResponse(w, http.StatusBadRequest, "empty body")
 		return
 	}
 
 	err := req.validate()
 	if err != nil {
-		writeErrorResponse(w, http.StatusBadRequest, "Invalid license")
+		logger.Info("Invalid license", map[string]interface{}{
+			"error": err.Error(),
+		})
+		writeErrorResponse(w, http.StatusBadRequest, "invalid license")
 		return
 	}
 
-	// customer := s.findLicenseCustomer(req.LicenseKey)
-	// if customer == nil {
-	// 	respondWithValidation(w, false, "License not found")
-	// 	return
-	// }
-	// license := findLicenseInCustomer(customer, req.LicenseKey)
-	// if license.Status != models.StatusActive {
-	// 	respondWithValidation(w, false, "License not active")
-	// 	return
-	// }
+	license, err := s.Storage.FindLicenseByKey(ctx, req.LicenseKey)
+	if err != nil {
+		logger.Error("Error while fetch license", map[string]interface{}{
+			"error": err.Error(),
+		})
+		writeErrorResponse(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
 
-	// compatible, err := version.IsCompatible(license.Version, req.AppVersion)
-	// if err != nil {
-	// 	respondWithValidation(w, false, "Invalid version format")
-	// 	return
-	// }
+	if license == nil {
+		logger.Warn("License not found", map[string]interface{}{
+			"license":     req.LicenseKey,
+			"app_version": req.AppVersion,
+		})
+		respondWithValidation(w, false, "license not found")
+		return
+	}
 
-	// if !compatible {
-	// 	respondWithValidation(w, false, "License not valid for this app version")
-	// 	return
-	// }
+	if license.Status != models.StatusActive {
+		respondWithValidation(w, false, "license not active")
+		return
+	}
 
-	// respondWithValidation(w, true, "License valid")
+	respondWithValidation(w, true, "license valid")
 }
-
-// func findLicenseInCustomer(customer *models.Customer, licenseKey string) *models.License {
-// 	for _, license := range customer.Licenses {
-// 		if license.Key == licenseKey {
-// 			return &license
-// 		}
-// 	}
-// 	return nil
-// }
 
 func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 	w.Header().Set("Content-Type", "application/json")
@@ -77,14 +85,6 @@ func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 		Message: message,
 	})
 }
-
-// func (s *Server) findLicenseCustomer(licenseKey string) *models.Customer {
-// 	customer, err := s.Storage.FindCustomerByLicenseKey(licenseKey)
-// 	if err != nil {
-// 		return nil
-// 	}
-// 	return customer
-// }
 
 func (lr LicenseRequest) validate() error {
 	if lr.LicenseKey == "" {
