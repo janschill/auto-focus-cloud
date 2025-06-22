@@ -278,6 +278,7 @@ func (s *SQLiteStorage) migrate(ctx context.Context) error {
           product_id TEXT NOT NULL,
           version TEXT NOT NULL,
           status TEXT NOT NULL,
+          stripe_session_id TEXT NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (customer_id) REFERENCES customers(id)
