@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
+	"auto-focus.app/cloud/internal/logger"
 	"auto-focus.app/cloud/internal/ratelimit"
 	"auto-focus.app/cloud/storage"
 )
@@ -27,13 +27,17 @@ func NewHttpServer(db storage.Storage) *Server {
 
 	mux.Handle("/health", http.HandlerFunc(s.Health))
 	// mux.Handle("/api/v1/licenses", http.HandlerFunc(db.list))
-	// mux.Handle("/api/v1/licenses/validate", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
+	mux.Handle("/api/v1/licenses/validate", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
 	mux.Handle("/api/v1/webhooks/stripe", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.stripe)))
 
 	return s
 }
 
 func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
+	logger.Debug("Health check requested", map[string]interface{}{
+		"remote_addr": r.RemoteAddr,
+	})
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
@@ -53,7 +57,12 @@ func (s *Server) chain(middleware ...Middleware) func(http.Handler) http.Handler
 func (s *Server) withRateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !s.RateLimitter.Allow(r.RemoteAddr) {
-			log.Default().Printf("Rate limit reached for %s\n", r.RemoteAddr)
+			logger.Warn("Rate limit exceeded", map[string]interface{}{
+				"remote_addr": r.RemoteAddr,
+				"path":        r.URL.Path,
+				"method":      r.Method,
+				"user_agent":  r.Header.Get("User-Agent"),
+			})
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
@@ -64,8 +73,33 @@ func (s *Server) withRateLimit(next http.Handler) http.Handler {
 func (s *Server) withLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next.ServeHTTP(w, r)
-		elapsedTime := time.Since(start)
-		log.Printf("[%s] [%s] [%s]\n", r.Method, r.URL.Path, elapsedTime)
+
+		// Create a custom ResponseWriter to capture status code
+		rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+		next.ServeHTTP(rw, r)
+
+		duration := time.Since(start)
+
+		logger.Info("HTTP request", map[string]interface{}{
+			"method":       r.Method,
+			"path":         r.URL.Path,
+			"remote_addr":  r.RemoteAddr,
+			"user_agent":   r.Header.Get("User-Agent"),
+			"status_code":  rw.statusCode,
+			"duration_ms":  duration.Milliseconds(),
+			"content_type": r.Header.Get("Content-Type"),
+		})
 	})
+}
+
+// Custom ResponseWriter to capture status code
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
 }
