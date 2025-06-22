@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"auto-focus.app/cloud/internal/version"
-	"auto-focus.app/cloud/models"
 )
 
 type LicenseRequest struct {
@@ -39,39 +36,39 @@ func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	customer := s.findLicenseCustomer(req.LicenseKey)
-	if customer == nil {
-		respondWithValidation(w, false, "License not found")
-		return
-	}
-	license := findLicenseInCustomer(customer, req.LicenseKey)
-	if license.Status != models.StatusActive {
-		respondWithValidation(w, false, "License not active")
-		return
-	}
+	// customer := s.findLicenseCustomer(req.LicenseKey)
+	// if customer == nil {
+	// 	respondWithValidation(w, false, "License not found")
+	// 	return
+	// }
+	// license := findLicenseInCustomer(customer, req.LicenseKey)
+	// if license.Status != models.StatusActive {
+	// 	respondWithValidation(w, false, "License not active")
+	// 	return
+	// }
 
-	compatible, err := version.IsCompatible(license.Version, req.AppVersion)
-	if err != nil {
-		respondWithValidation(w, false, "Invalid version format")
-		return
-	}
+	// compatible, err := version.IsCompatible(license.Version, req.AppVersion)
+	// if err != nil {
+	// 	respondWithValidation(w, false, "Invalid version format")
+	// 	return
+	// }
 
-	if !compatible {
-		respondWithValidation(w, false, "License not valid for this app version")
-		return
-	}
+	// if !compatible {
+	// 	respondWithValidation(w, false, "License not valid for this app version")
+	// 	return
+	// }
 
-	respondWithValidation(w, true, "License valid")
+	// respondWithValidation(w, true, "License valid")
 }
 
-func findLicenseInCustomer(customer *models.Customer, licenseKey string) *models.License {
-	for _, license := range customer.Licenses {
-		if license.Key == licenseKey {
-			return &license
-		}
-	}
-	return nil
-}
+// func findLicenseInCustomer(customer *models.Customer, licenseKey string) *models.License {
+// 	for _, license := range customer.Licenses {
+// 		if license.Key == licenseKey {
+// 			return &license
+// 		}
+// 	}
+// 	return nil
+// }
 
 func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 	w.Header().Set("Content-Type", "application/json")
@@ -81,13 +78,13 @@ func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 	})
 }
 
-func (s *Server) findLicenseCustomer(licenseKey string) *models.Customer {
-	customer, err := s.Storage.FindCustomerByLicenseKey(licenseKey)
-	if err != nil {
-		return nil
-	}
-	return customer
-}
+// func (s *Server) findLicenseCustomer(licenseKey string) *models.Customer {
+// 	customer, err := s.Storage.FindCustomerByLicenseKey(licenseKey)
+// 	if err != nil {
+// 		return nil
+// 	}
+// 	return customer
+// }
 
 func (lr LicenseRequest) validate() error {
 	if lr.LicenseKey == "" {

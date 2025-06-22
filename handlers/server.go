@@ -27,7 +27,7 @@ func NewHttpServer(db storage.Storage) *Server {
 
 	mux.Handle("/health", http.HandlerFunc(s.Health))
 	// mux.Handle("/api/v1/licenses", http.HandlerFunc(db.list))
-	mux.Handle("/api/v1/licenses/validate", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
+	// mux.Handle("/api/v1/licenses/validate", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
 	mux.Handle("/api/v1/webhooks/stripe", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.stripe)))
 
 	return s

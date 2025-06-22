@@ -9,11 +9,13 @@ import (
 )
 
 func main() {
-	db, err := storage.NewFileStorage("storage/data/customers.json")
+	storage, err := storage.NewSQLiteStorage("storage/data/autofocus.db")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to create storage: ", err)
 	}
-	srv := handlers.NewHttpServer(db)
+	defer storage.Close()
+
+	srv := handlers.NewHttpServer(storage)
 
 	log.Fatal(http.ListenAndServe(":8080", srv.Mux))
 }

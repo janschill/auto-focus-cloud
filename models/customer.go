@@ -1,7 +1,11 @@
 package models
 
+import "time"
+
 type Customer struct {
-	Id       string
-	Email    string
-	Licenses []License
+	ID               string
+	Email            string
+	StripeCustomerID string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
