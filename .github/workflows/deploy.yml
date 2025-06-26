@@ -8,6 +8,9 @@ on:
 env:
   GO_VERSION: '1.24.2'
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -15,6 +18,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -95,9 +101,11 @@ jobs:
           rm /tmp/auto-focus-cloud-${{ env.VERSION }}.tar.gz
           
     - name: Create Git Tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
         git tag ${{ env.VERSION }}
         git push origin ${{ env.VERSION }}
         
