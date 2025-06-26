@@ -1,0 +1,28 @@
+[Unit]
+Description=Auto-Focus API
+After=network.target
+
+[Service]
+Type=simple
+User=autofocus
+WorkingDirectory=/home/autofocus/app
+ExecStart=/home/autofocus/app/auto-focus-cloud
+Restart=always
+RestartSec=5
+Environment=PORT=8080
+EnvironmentFile=-/home/autofocus/app/.env
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/autofocus/app
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=auto-focus-cloud
+
+[Install]
+WantedBy=multi-user.target

@@ -1,110 +1,113 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"net/smtp"
 	"os"
-	"os/signal"
-	"syscall"
+	"strings"
 	"time"
 
-	"auto-focus.app/cloud/internal/config"
-	"auto-focus.app/cloud/internal/database"
-	"auto-focus.app/cloud/internal/handlers"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 )
 
+var version = "dev"
+
+type HealthResponse struct {
+	Status    string    `json:"status"`
+	Version   string    `json:"version"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type EmailRequest struct {
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
+}
+
+func sendEmail(to, subject, body string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASS")
+
+	if smtpHost == "" || smtpPort == "" || smtpUser == "" || smtpPass == "" {
+		return fmt.Errorf("SMTP configuration missing")
+	}
+
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+
+	msg := []byte(fmt.Sprintf("From: %s\r\n"+
+		"To: %s\r\n"+
+		"Subject: %s\r\n"+
+		"\r\n"+
+		"%s\r\n", smtpUser, to, subject, body))
+
+	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
+	return smtp.SendMail(addr, auth, smtpUser, []string{to}, msg)
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	response := HealthResponse{
+		Status:    "healthy",
+		Version:   version,
+		Timestamp: time.Now(),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func emailHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	var emailReq EmailRequest
+	if err := json.Unmarshal(body, &emailReq); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := sendEmail(emailReq.To, emailReq.Subject, emailReq.Body); err != nil {
+		log.Printf("Failed to send email: %v", err)
+		http.Error(w, "Failed to send email", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "sent"})
+}
+
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+	// Load version from file if it exists
+	if versionBytes, err := os.ReadFile("VERSION"); err == nil {
+		version = strings.TrimSpace(string(versionBytes))
 	}
 
-	cfg, err := config.New()
-	if err != nil {
-		log.Fatalf("Failed to initialize configuration: %v", err)
+	// Load environment variables
+	godotenv.Load()
+
+	// Set up routes
+	http.HandleFunc("/health", healthHandler)
+	// http.HandleFunc("/api/email", emailHandler)
+
+	// Get port from environment or default to 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 
-	db, err := database.New(cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
-
-	if err := database.Migrate(cfg.DatabaseURL); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-
-	r := chi.NewRouter()
-
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://auto-focus.app", "http://localhost:*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
-
-	stripeHandler := handlers.NewStripeHandler(db, cfg.StripeSecret, cfg.StripeWebhookSecret)
-	licenseHandler := handlers.NewLicenseHandler(db, cfg.LicenseSecret)
-
-	r.Group(func(r chi.Router) {
-		r.Route("/api", func(r chi.Router) {
-			r.Get("/", handlers.HealthCheck)
-			r.Get("/health", handlers.HealthCheck)
-
-			r.Post("/webhooks/stripe", stripeHandler.HandleWebhook)
-
-			r.Route("/license", func(r chi.Router) {
-				r.Post("/verify", licenseHandler.VerifyLicense)
-				r.Post("/activate", licenseHandler.ActivateLicense)
-				r.Post("/deactivate", licenseHandler.DeactivateLicense)
-			})
-		})
-	})
-
-	server := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: r,
-	}
-
-	serverCtx, serverStopCtx := context.WithCancel(context.Background())
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-
-	go func() {
-		<-sig
-		log.Println("Shutting down server...")
-
-		shutdownCtx, _ := context.WithTimeout(serverCtx, 30*time.Second)
-		go func() {
-			<-shutdownCtx.Done()
-			if shutdownCtx.Err() == context.DeadlineExceeded {
-				log.Fatal("Graceful shutdown timed out.. forcing exit.")
-			}
-		}()
-
-		err := server.Shutdown(shutdownCtx)
-		if err != nil {
-			log.Fatal(err)
-		}
-		serverStopCtx()
-	}()
-
-	log.Printf("Server is running on port %s", cfg.Port)
-	err = server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
-
-	<-serverCtx.Done()
-	log.Println("Server stopped")
+	log.Printf("Auto Focus Cloud API %s starting on port %s", version, port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

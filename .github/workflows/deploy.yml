@@ -1,0 +1,112 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.24.2'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      run: go mod download
+      
+    - name: Run tests
+      run: go test -v ./...
+      
+    - name: Build application
+      run: |
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o auto-focus-cloud main.go
+        
+    - name: Generate version
+      id: version
+      run: |
+        # Get the latest tag, extract number, increment by 1
+        LATEST_TAG=$(git tag -l "v*" --sort=-version:refname | head -n1)
+        if [ -z "$LATEST_TAG" ]; then
+          NEXT_VERSION="v1"
+        else
+          CURRENT_NUM=$(echo $LATEST_TAG | sed 's/v//')
+          NEXT_NUM=$((CURRENT_NUM + 1))
+          NEXT_VERSION="v$NEXT_NUM"
+        fi
+        echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+        echo "Next version: $NEXT_VERSION"
+        
+    - name: Create deployment package
+      run: |
+        mkdir -p deploy
+        cp auto-focus-cloud deploy/
+        cp deploy.sh deploy/
+        cp auto-focus-cloud.service deploy/
+        echo "${{ env.VERSION }}" > deploy/VERSION
+        tar -czf auto-focus-cloud-${{ env.VERSION }}.tar.gz -C deploy .
+        
+    - name: Upload deployment package
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        source: "auto-focus-cloud-${{ env.VERSION }}.tar.gz"
+        target: "/tmp/"
+        
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        script: |
+          # Create deployment directory
+          sudo mkdir -p /home/autofocus/app
+          cd /home/autofocus/app
+          
+          # Extract deployment package
+          sudo tar -xzf /tmp/auto-focus-cloud-${{ env.VERSION }}.tar.gz
+          sudo chmod +x auto-focus-cloud deploy.sh
+          
+          # Run deployment script
+          sudo ./deploy.sh ${{ env.VERSION }}
+          
+          # Cleanup
+          rm /tmp/auto-focus-cloud-${{ env.VERSION }}.tar.gz
+          
+    - name: Create Git Tag
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag ${{ env.VERSION }}
+        git push origin ${{ env.VERSION }}
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ env.VERSION }}
+        name: Release ${{ env.VERSION }}
+        files: auto-focus-cloud-${{ env.VERSION }}.tar.gz
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
