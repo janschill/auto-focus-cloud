@@ -21,9 +21,11 @@ if [ -f "${INSTALL_DIR}/auto-focus-cloud" ]; then
     cp "${INSTALL_DIR}/auto-focus-cloud" "${INSTALL_DIR}/auto-focus-cloud.backup"
 fi
 
-# Copy new binary
+# Copy new binary (only if we're not already in the install dir)
 echo "📁 Installing new binary"
-cp auto-focus-cloud ${INSTALL_DIR}/
+if [ "$(pwd)" != "${INSTALL_DIR}" ]; then
+    cp auto-focus-cloud ${INSTALL_DIR}/
+fi
 chmod +x ${INSTALL_DIR}/auto-focus-cloud
 
 # Install/update systemd service

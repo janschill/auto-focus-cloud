@@ -37,7 +37,7 @@ jobs:
       
     - name: Build application
       run: |
-        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o auto-focus-cloud main.go
+        CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-w -s" -o auto-focus-cloud main.go
         
     - name: Generate version
       id: version
