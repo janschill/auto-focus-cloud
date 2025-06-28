@@ -9,14 +9,15 @@ WorkingDirectory=/home/autofocus/app
 ExecStart=/home/autofocus/app/auto-focus-cloud
 Restart=always
 RestartSec=5
+
+# Environment variables
 Environment=PORT=8080
 EnvironmentFile=-/home/autofocus/app/.env
 
-# Security settings
+# Security settings (without ProtectHome=true which was causing issues)
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
 ReadWritePaths=/home/autofocus/app
 
 # Logging
