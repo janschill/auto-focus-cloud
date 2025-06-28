@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
 )
 
@@ -90,19 +91,23 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Load version from file if it exists
 	if versionBytes, err := os.ReadFile("VERSION"); err == nil {
 		version = strings.TrimSpace(string(versionBytes))
 	}
 
-	// Load environment variables
 	godotenv.Load()
 
-	// Set up routes
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		TracesSampleRate: 1.0,
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+
 	http.HandleFunc("/health", healthHandler)
 	// http.HandleFunc("/api/email", emailHandler)
 
-	// Get port from environment or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
