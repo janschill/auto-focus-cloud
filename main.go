@@ -154,16 +154,16 @@ func slackOAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 <head>
   <title>Auto-Focus - Slack Connected</title>
   <style>
-    body { 
+    body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      text-align: center; 
+      text-align: center;
       padding: 50px;
       background-color: #f8f9fa;
     }
-    .success { 
-      color: #28a745; 
-      font-size: 24px; 
-      margin-bottom: 20px; 
+    .success {
+      color: #28a745;
+      font-size: 24px;
+      margin-bottom: 20px;
     }
     .info {
       color: #6c757d;
@@ -257,7 +257,7 @@ func slackOAuthTestHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Generate a test state parameter
 	state := fmt.Sprintf("test-%d", time.Now().Unix())
-	scopes := "users.profile:write,dnd:write"
+	scopes := "users.profile:read,users.profile:write,dnd:write"
 	redirectURI := os.Getenv("SLACK_REDIRECT_URI")
 	if redirectURI == "" {
 		redirectURI = "https://auto-focus.app/api/slack/oauth/callback"
@@ -278,7 +278,7 @@ func slackOAuthTestHandler(w http.ResponseWriter, r *http.Request) {
 <head>
   <title>Auto-Focus - Test Slack OAuth</title>
   <style>
-    body { 
+    body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 600px;
       margin: 50px auto;
@@ -292,7 +292,7 @@ func slackOAuthTestHandler(w http.ResponseWriter, r *http.Request) {
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     h1 { color: #333; margin-bottom: 20px; }
-    .info { 
+    .info {
       background: #e7f3ff;
       padding: 15px;
       border-radius: 6px;
@@ -323,7 +323,7 @@ func slackOAuthTestHandler(w http.ResponseWriter, r *http.Request) {
 <body>
   <div class="container">
     <h1>🧪 Auto-Focus Slack OAuth Test</h1>
-    
+
     <div class="info">
       <strong>Testing Instructions:</strong><br>
       1. Click the "Connect to Slack" button below<br>
@@ -375,7 +375,7 @@ func slackOAuthCallbackTestHandler(w http.ResponseWriter, r *http.Request) {
 <head>
   <title>Auto-Focus - OAuth Error</title>
   <style>
-    body { 
+    body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 600px;
       margin: 50px auto;
@@ -413,7 +413,7 @@ func slackOAuthCallbackTestHandler(w http.ResponseWriter, r *http.Request) {
 <head>
   <title>Auto-Focus - OAuth Error</title>
   <style>
-    body { 
+    body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 600px;
       margin: 50px auto;
@@ -447,7 +447,7 @@ func slackOAuthCallbackTestHandler(w http.ResponseWriter, r *http.Request) {
 <head>
   <title>Auto-Focus - OAuth Error</title>
   <style>
-    body { 
+    body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 600px;
       margin: 50px auto;
@@ -485,7 +485,7 @@ func slackOAuthCallbackTestHandler(w http.ResponseWriter, r *http.Request) {
 <head>
   <title>Auto-Focus - OAuth Error</title>
   <style>
-    body { 
+    body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 600px;
       margin: 50px auto;
@@ -524,7 +524,7 @@ func slackOAuthCallbackTestHandler(w http.ResponseWriter, r *http.Request) {
 <head>
   <title>Auto-Focus - OAuth Success</title>
   <style>
-    body { 
+    body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 800px;
       margin: 50px auto;
@@ -566,7 +566,7 @@ func slackOAuthCallbackTestHandler(w http.ResponseWriter, r *http.Request) {
 <body>
   <div class="container">
     <div class="success">✅ OAuth Success!</div>
-    
+
     <div class="info">
       <strong>Team Connected:</strong> %s<br>
       <strong>User ID:</strong> %s<br>
@@ -632,11 +632,11 @@ func main() {
 
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/slack/oauth/callback", slackOAuthCallbackHandler)
-	
+
 	// Test endpoints (remove in production)
 	http.HandleFunc("/slack/test", slackOAuthTestHandler)
 	http.HandleFunc("/slack/oauth/callback-test", slackOAuthCallbackTestHandler)
-	
+
 	// http.HandleFunc("/api/email", emailHandler)
 
 	port := os.Getenv("PORT")
