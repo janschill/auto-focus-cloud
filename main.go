@@ -322,7 +322,7 @@ func slackOAuthTestHandler(w http.ResponseWriter, r *http.Request) {
 </head>
 <body>
   <div class="container">
-    <h1>🧪 Auto-Focus Slack OAuth Test</h1>
+    <h1>Auto-Focus Slack OAuth Test</h1>
 
     <div class="info">
       <strong>Testing Instructions:</strong><br>
@@ -332,7 +332,7 @@ func slackOAuthTestHandler(w http.ResponseWriter, r *http.Request) {
       4. Check server logs for any errors
     </div>
 
-    <a href="%s" class="button">🚀 Connect to Slack</a>
+    <a href="%s" class="button">Connect to Slack</a>
 
     <div class="details">
       <strong>OAuth Details:</strong><br>
