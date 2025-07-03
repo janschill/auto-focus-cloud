@@ -264,9 +264,8 @@ func slackOAuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authURL := fmt.Sprintf(
-		"https://slack.com/oauth/v2/authorize?client_id=%s&scope=%s&redirect_uri=%s&state=%s&user_scope=%s",
+		"https://slack.com/oauth/v2/authorize?client_id=%s&redirect_uri=%s&state=%s&user_scope=%s",
 		url.QueryEscape(clientId),
-		url.QueryEscape(scopes),
 		url.QueryEscape(redirectURI),
 		url.QueryEscape(state),
 		url.QueryEscape(scopes),
