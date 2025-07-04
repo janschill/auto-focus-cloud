@@ -162,7 +162,7 @@ func slackOAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("[OAuth] Success! Team: %s, User: %s, Scopes: %s", 
-		tokenData.Team.Name, tokenData.AuthedUser.Id, tokenData.Scope)
+		tokenData.Team.Name, tokenData.AuthedUser.Id, tokenData.AuthedUser.Scope)
 
 	// Show success page and redirect to app
 	successHTML := fmt.Sprintf(`
@@ -212,11 +212,11 @@ func slackOAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 </body>
 </html>`,
 		tokenData.Team.Name,
-		tokenData.AccessToken,
+		tokenData.AuthedUser.AccessToken,
 		tokenData.Team.Id,
 		tokenData.Team.Name,
 		tokenData.AuthedUser.Id,
-		tokenData.Scope,
+		tokenData.AuthedUser.Scope,
 		state,
 	)
 
