@@ -1,5 +1,13 @@
 # auto-focus-cloud
 
+## To-dos
+
+- [ ] Webhook for Stripe checkout completed
+- [ ] Customer management
+- [ ] License management
+- [ ] Deployment
+- [ ] Cloudflare proxy
+
 ## Getting Started
 
 ```sh

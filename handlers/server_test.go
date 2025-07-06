@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,11 +14,8 @@ func TestNewHttpServer(t *testing.T) {
 	db := &storage.MemoryStorage{
 		Data: storage.Database{
 			"1": models.Customer{
-				Id:    "1",
+				ID:    "1",
 				Email: "test@example.com",
-				Licenses: []models.License{
-					{Key: "TEST-KEY", Version: "1.0.0", Status: "active"},
-				},
 			},
 		},
 	}
@@ -37,7 +35,7 @@ func TestNewHttpServer(t *testing.T) {
 	}
 
 	// Test via Storage interface instead of direct access
-	customer, err := server.Storage.GetCustomer("1")
+	customer, err := server.Storage.GetCustomer(context.Background(), "1")
 	if err != nil {
 		t.Errorf("Expected no error getting customer, got: %v", err)
 	}

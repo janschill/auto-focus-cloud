@@ -2,3 +2,5 @@
 .env
 mise.toml
 storage/data
+coverage*
+stripe/

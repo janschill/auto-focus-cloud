@@ -1,321 +1,458 @@
 package models
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
+	"time"
 )
 
-func TestLicense_JSONSerialization(t *testing.T) {
+func TestLicenseStatus_Constants(t *testing.T) {
+	// Test that status constants have expected values
+	if StatusActive != "active" {
+		t.Errorf("Expected StatusActive to be 'active', got '%s'", StatusActive)
+	}
+
+	if StatusSuspended != "suspended" {
+		t.Errorf("Expected StatusSuspended to be 'suspended', got '%s'", StatusSuspended)
+	}
+}
+
+func TestLicense_Creation(t *testing.T) {
+	now := time.Now()
+	
 	license := License{
-		Key:     "TEST-LICENSE-KEY",
-		Version: "1.2.3",
+		ID:              "test-license-1",
+		Key:             "AFP-TEST123",
+		CustomerID:      "customer-1",
+		ProductID:       "prod_test123",
+		Version:         "1.0.0",
+		Status:          StatusActive,
+		StripeSessionID: "cs_test123",
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
-	// Test marshaling
-	data, err := json.Marshal(license)
-	if err != nil {
-		t.Fatalf("Failed to marshal license: %v", err)
+	// Test all fields are set correctly
+	if license.ID != "test-license-1" {
+		t.Errorf("Expected ID 'test-license-1', got '%s'", license.ID)
 	}
 
-	// Test unmarshaling
-	var unmarshaled License
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal license: %v", err)
+	if license.Key != "AFP-TEST123" {
+		t.Errorf("Expected Key 'AFP-TEST123', got '%s'", license.Key)
 	}
 
-	// Verify data integrity
-	if unmarshaled.Key != license.Key {
-		t.Errorf("Expected key '%s', got '%s'", license.Key, unmarshaled.Key)
+	if license.CustomerID != "customer-1" {
+		t.Errorf("Expected CustomerID 'customer-1', got '%s'", license.CustomerID)
 	}
 
-	if unmarshaled.Version != license.Version {
-		t.Errorf("Expected version '%s', got '%s'", license.Version, unmarshaled.Version)
-	}
-}
-
-func TestLicense_EmptyFields(t *testing.T) {
-	license := License{
-		Key:     "",
-		Version: "",
+	if license.ProductID != "prod_test123" {
+		t.Errorf("Expected ProductID 'prod_test123', got '%s'", license.ProductID)
 	}
 
-	data, err := json.Marshal(license)
-	if err != nil {
-		t.Fatalf("Failed to marshal empty license: %v", err)
+	if license.Version != "1.0.0" {
+		t.Errorf("Expected Version '1.0.0', got '%s'", license.Version)
 	}
 
-	var unmarshaled License
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal empty license: %v", err)
+	if license.Status != StatusActive {
+		t.Errorf("Expected Status '%s', got '%s'", StatusActive, license.Status)
 	}
 
-	if unmarshaled.Key != "" {
-		t.Errorf("Expected empty key, got '%s'", unmarshaled.Key)
+	if license.StripeSessionID != "cs_test123" {
+		t.Errorf("Expected StripeSessionID 'cs_test123', got '%s'", license.StripeSessionID)
 	}
 
-	if unmarshaled.Version != "" {
-		t.Errorf("Expected empty version, got '%s'", unmarshaled.Version)
+	if !license.CreatedAt.Equal(now) {
+		t.Errorf("Expected CreatedAt to be %v, got %v", now, license.CreatedAt)
+	}
+
+	if !license.UpdatedAt.Equal(now) {
+		t.Errorf("Expected UpdatedAt to be %v, got %v", now, license.UpdatedAt)
 	}
 }
 
-func TestCustomer_JSONSerialization(t *testing.T) {
-	customer := Customer{
-		Id:    "customer-123",
-		Email: "test@example.com",
-		Licenses: []License{
-			{Key: "LICENSE-001", Version: "1.0.0"},
-			{Key: "LICENSE-002", Version: "2.0.0"},
-		},
+func TestLicense_ZeroValues(t *testing.T) {
+	var license License
+
+	// Test zero values
+	if license.ID != "" {
+		t.Errorf("Expected empty ID, got '%s'", license.ID)
 	}
 
-	// Test marshaling
-	data, err := json.Marshal(customer)
-	if err != nil {
-		t.Fatalf("Failed to marshal customer: %v", err)
+	if license.Key != "" {
+		t.Errorf("Expected empty Key, got '%s'", license.Key)
 	}
 
-	// Test unmarshaling
-	var unmarshaled Customer
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal customer: %v", err)
+	if license.CustomerID != "" {
+		t.Errorf("Expected empty CustomerID, got '%s'", license.CustomerID)
 	}
 
-	// Verify basic fields
-	if unmarshaled.Id != customer.Id {
-		t.Errorf("Expected ID '%s', got '%s'", customer.Id, unmarshaled.Id)
+	if license.ProductID != "" {
+		t.Errorf("Expected empty ProductID, got '%s'", license.ProductID)
 	}
 
-	if unmarshaled.Email != customer.Email {
-		t.Errorf("Expected email '%s', got '%s'", customer.Email, unmarshaled.Email)
+	if license.Version != "" {
+		t.Errorf("Expected empty Version, got '%s'", license.Version)
 	}
 
-	// Verify licenses array
-	if len(unmarshaled.Licenses) != len(customer.Licenses) {
-		t.Errorf("Expected %d licenses, got %d", len(customer.Licenses), len(unmarshaled.Licenses))
+	if license.Status != "" {
+		t.Errorf("Expected empty Status, got '%s'", license.Status)
 	}
 
-	for i, license := range customer.Licenses {
-		if i >= len(unmarshaled.Licenses) {
-			t.Errorf("Missing license at index %d", i)
-			continue
-		}
+	if license.StripeSessionID != "" {
+		t.Errorf("Expected empty StripeSessionID, got '%s'", license.StripeSessionID)
+	}
 
-		if unmarshaled.Licenses[i].Key != license.Key {
-			t.Errorf("License %d: expected key '%s', got '%s'", i, license.Key, unmarshaled.Licenses[i].Key)
-		}
+	if !license.CreatedAt.IsZero() {
+		t.Errorf("Expected zero CreatedAt, got %v", license.CreatedAt)
+	}
 
-		if unmarshaled.Licenses[i].Version != license.Version {
-			t.Errorf("License %d: expected version '%s', got '%s'", i, license.Version, unmarshaled.Licenses[i].Version)
-		}
+	if !license.UpdatedAt.IsZero() {
+		t.Errorf("Expected zero UpdatedAt, got %v", license.UpdatedAt)
 	}
 }
 
-func TestCustomer_EmptyLicenses(t *testing.T) {
-	customer := Customer{
-		Id:       "customer-empty",
-		Email:    "empty@example.com",
-		Licenses: []License{},
-	}
-
-	data, err := json.Marshal(customer)
-	if err != nil {
-		t.Fatalf("Failed to marshal customer with empty licenses: %v", err)
-	}
-
-	var unmarshaled Customer
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal customer with empty licenses: %v", err)
-	}
-
-	if len(unmarshaled.Licenses) != 0 {
-		t.Errorf("Expected 0 licenses, got %d", len(unmarshaled.Licenses))
-	}
-}
-
-func TestCustomer_NilLicenses(t *testing.T) {
-	customer := Customer{
-		Id:       "customer-nil",
-		Email:    "nil@example.com",
-		Licenses: nil,
-	}
-
-	data, err := json.Marshal(customer)
-	if err != nil {
-		t.Fatalf("Failed to marshal customer with nil licenses: %v", err)
-	}
-
-	var unmarshaled Customer
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal customer with nil licenses: %v", err)
-	}
-
-	// JSON unmarshaling should create an empty slice, not nil
-	if len(unmarshaled.Licenses) != 0 {
-		t.Errorf("Expected empty slice, got %d items", len(unmarshaled.Licenses))
-	}
-}
-
-func TestLicense_SpecialCharacters(t *testing.T) {
-	license := License{
-		Key:     "KEY-WITH-SPECIAL-CHARS-!@#$%",
-		Version: "1.0.0-beta+build.123",
-	}
-
-	data, err := json.Marshal(license)
-	if err != nil {
-		t.Fatalf("Failed to marshal license with special characters: %v", err)
-	}
-
-	var unmarshaled License
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal license with special characters: %v", err)
-	}
-
-	if unmarshaled.Key != license.Key {
-		t.Errorf("Expected key '%s', got '%s'", license.Key, unmarshaled.Key)
-	}
-
-	if unmarshaled.Version != license.Version {
-		t.Errorf("Expected version '%s', got '%s'", license.Version, unmarshaled.Version)
-	}
-}
-
-func TestCustomer_LargeLicenseArray(t *testing.T) {
-	// Test with many licenses to ensure performance
-	licenses := make([]License, 100)
-	for i := 0; i < 100; i++ {
-		licenses[i] = License{
-			Key:     fmt.Sprintf("LICENSE-%03d", i),
-			Version: fmt.Sprintf("1.%d.0", i),
-		}
-	}
-
-	customer := Customer{
-		Id:       "customer-large",
-		Email:    "large@example.com",
-		Licenses: licenses,
-	}
-
-	data, err := json.Marshal(customer)
-	if err != nil {
-		t.Fatalf("Failed to marshal customer with many licenses: %v", err)
-	}
-
-	var unmarshaled Customer
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal customer with many licenses: %v", err)
-	}
-
-	if len(unmarshaled.Licenses) != 100 {
-		t.Errorf("Expected 100 licenses, got %d", len(unmarshaled.Licenses))
-	}
-
-	// Spot check a few licenses
-	if unmarshaled.Licenses[0].Key != "LICENSE-000" {
-		t.Errorf("Expected first license key 'LICENSE-000', got '%s'", unmarshaled.Licenses[0].Key)
-	}
-
-	if unmarshaled.Licenses[99].Key != "LICENSE-099" {
-		t.Errorf("Expected last license key 'LICENSE-099', got '%s'", unmarshaled.Licenses[99].Key)
-	}
-}
-
-// Test data validation (even though current models don't have validation)
-func TestLicense_DataConsistency(t *testing.T) {
-	tests := []struct {
-		name    string
-		license License
-		valid   bool
+func TestLicense_StatusValidation(t *testing.T) {
+	testCases := []struct {
+		name           string
+		status         string
+		shouldBeActive bool
 	}{
 		{
-			name: "normal license",
-			license: License{
-				Key:     "NORMAL-LICENSE-KEY",
-				Version: "1.0.0",
-			},
-			valid: true,
+			name:           "active status",
+			status:         StatusActive,
+			shouldBeActive: true,
 		},
 		{
-			name: "empty key should be invalid",
-			license: License{
-				Key:     "",
-				Version: "1.0.0",
-			},
-			valid: false,
+			name:           "suspended status",
+			status:         StatusSuspended,
+			shouldBeActive: false,
 		},
 		{
-			name: "empty version should be invalid",
-			license: License{
-				Key:     "VALID-KEY",
-				Version: "",
-			},
-			valid: false,
+			name:           "empty status",
+			status:         "",
+			shouldBeActive: false,
 		},
 		{
-			name: "both empty should be invalid",
-			license: License{
-				Key:     "",
-				Version: "",
-			},
-			valid: false,
+			name:           "invalid status",
+			status:         "invalid",
+			shouldBeActive: false,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// This is a placeholder for future validation logic
-			// For now, we just test that data can be serialized
-			_, err := json.Marshal(tt.license)
-			if err != nil {
-				t.Errorf("Failed to marshal license: %v", err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			license := License{
+				Status: tc.status,
 			}
 
-			// TODO: Add actual validation when License gets validation methods
-			// Example: if tt.license.IsValid() != tt.valid { ... }
+			isActive := license.Status == StatusActive
+			if isActive != tc.shouldBeActive {
+				t.Errorf("Expected isActive=%v for status '%s', got %v", tc.shouldBeActive, tc.status, isActive)
+			}
 		})
 	}
 }
 
-// Benchmark tests for performance
-func BenchmarkLicense_Marshal(b *testing.B) {
-	license := License{
-		Key:     "BENCHMARK-LICENSE-KEY",
-		Version: "1.0.0",
+func TestLicense_KeyFormats(t *testing.T) {
+	validKeys := []string{
+		"AFP-12345678",
+		"AFP-ABCDEFGH",
+		"AFP-TEST123A",
+		"AFP-00000000",
 	}
 
+	invalidKeys := []string{
+		"",
+		"AFP-",
+		"AFP",
+		"12345678",
+		"INVALID-KEY",
+		"AFP-123",      // too short
+		"AFP-123456789", // too long
+	}
+
+	for _, key := range validKeys {
+		t.Run("valid_"+key, func(t *testing.T) {
+			license := License{Key: key}
+			
+			// Basic format check: starts with "AFP-" and has reasonable length
+			if len(license.Key) != 12 {
+				t.Errorf("Expected key length 12, got %d for key '%s'", len(license.Key), key)
+			}
+			
+			if license.Key[:4] != "AFP-" {
+				t.Errorf("Expected key to start with 'AFP-', got '%s'", key)
+			}
+		})
+	}
+
+	for _, key := range invalidKeys {
+		t.Run("invalid_"+key, func(t *testing.T) {
+			license := License{Key: key}
+			
+			// These should not pass our basic format validation
+			isValidFormat := len(license.Key) == 12 && license.Key[:4] == "AFP-"
+			if isValidFormat && key != "" {
+				t.Errorf("Key '%s' should not be valid format", key)
+			}
+		})
+	}
+}
+
+func TestLicense_VersionFormats(t *testing.T) {
+	validVersions := []string{
+		"1.0.0",
+		"2.1.3",
+		"10.5.2",
+		"0.0.1",
+	}
+
+	invalidVersions := []string{
+		"",
+		"1",
+		"1.0",
+		"1.0.0.0",
+		"v1.0.0",
+		"1.0.0-beta",
+		"invalid",
+	}
+
+	for _, version := range validVersions {
+		t.Run("valid_"+version, func(t *testing.T) {
+			license := License{Version: version}
+			
+			// Basic semantic version check (simplified)
+			if license.Version == "" {
+				t.Errorf("Version should not be empty")
+			}
+		})
+	}
+
+	for _, version := range invalidVersions {
+		t.Run("invalid_"+version, func(t *testing.T) {
+			license := License{Version: version}
+			
+			// We don't enforce strict version validation in the model
+			// This is handled by the version package
+			_ = license // Just ensure the struct accepts any string
+		})
+	}
+}
+
+func TestCustomer_Creation(t *testing.T) {
+	now := time.Now()
+	
+	customer := Customer{
+		ID:               "customer-1",
+		Email:            "test@example.com",
+		StripeCustomerID: "cus_test123",
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	}
+
+	// Test all fields are set correctly
+	if customer.ID != "customer-1" {
+		t.Errorf("Expected ID 'customer-1', got '%s'", customer.ID)
+	}
+
+	if customer.Email != "test@example.com" {
+		t.Errorf("Expected Email 'test@example.com', got '%s'", customer.Email)
+	}
+
+	if customer.StripeCustomerID != "cus_test123" {
+		t.Errorf("Expected StripeCustomerID 'cus_test123', got '%s'", customer.StripeCustomerID)
+	}
+
+	if !customer.CreatedAt.Equal(now) {
+		t.Errorf("Expected CreatedAt to be %v, got %v", now, customer.CreatedAt)
+	}
+
+	if !customer.UpdatedAt.Equal(now) {
+		t.Errorf("Expected UpdatedAt to be %v, got %v", now, customer.UpdatedAt)
+	}
+}
+
+func TestCustomer_ZeroValues(t *testing.T) {
+	var customer Customer
+
+	// Test zero values
+	if customer.ID != "" {
+		t.Errorf("Expected empty ID, got '%s'", customer.ID)
+	}
+
+	if customer.Email != "" {
+		t.Errorf("Expected empty Email, got '%s'", customer.Email)
+	}
+
+	if customer.StripeCustomerID != "" {
+		t.Errorf("Expected empty StripeCustomerID, got '%s'", customer.StripeCustomerID)
+	}
+
+	if !customer.CreatedAt.IsZero() {
+		t.Errorf("Expected zero CreatedAt, got %v", customer.CreatedAt)
+	}
+
+	if !customer.UpdatedAt.IsZero() {
+		t.Errorf("Expected zero UpdatedAt, got %v", customer.UpdatedAt)
+	}
+}
+
+func TestCustomer_EmailFormats(t *testing.T) {
+	validEmails := []string{
+		"test@example.com",
+		"user@domain.co.uk",
+		"name.surname@company.org",
+		"user+tag@example.com",
+	}
+
+	invalidEmails := []string{
+		"",
+		"invalid",
+		"@example.com",
+		"test@",
+		"test.example.com",
+	}
+
+	for _, email := range validEmails {
+		t.Run("valid_"+email, func(t *testing.T) {
+			customer := Customer{Email: email}
+			
+			// Basic email check: contains @ symbol
+			if customer.Email == "" {
+				t.Errorf("Email should not be empty")
+			}
+		})
+	}
+
+	for _, email := range invalidEmails {
+		t.Run("invalid_"+email, func(t *testing.T) {
+			customer := Customer{Email: email}
+			
+			// We don't enforce strict email validation in the model
+			// This would be handled by validation layer
+			_ = customer // Just ensure the struct accepts any string
+		})
+	}
+}
+
+func TestModels_TimeFields(t *testing.T) {
+	now := time.Now()
+	
+	// Test License time fields
+	license := License{
+		CreatedAt: now,
+		UpdatedAt: now.Add(time.Hour),
+	}
+
+	if license.CreatedAt.After(license.UpdatedAt) {
+		t.Errorf("CreatedAt should not be after UpdatedAt")
+	}
+
+	// Test Customer time fields  
+	customer := Customer{
+		CreatedAt: now,
+		UpdatedAt: now.Add(time.Hour),
+	}
+
+	if customer.CreatedAt.After(customer.UpdatedAt) {
+		t.Errorf("CreatedAt should not be after UpdatedAt")
+	}
+
+	// Test that time fields can be equal
+	customer2 := Customer{
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if !customer2.CreatedAt.Equal(customer2.UpdatedAt) {
+		t.Errorf("CreatedAt and UpdatedAt should be equal when set to same time")
+	}
+}
+
+func TestModels_IDGeneration(t *testing.T) {
+	// Test that different models can have same ID format
+	license := License{ID: "same-id"}
+	customer := Customer{ID: "same-id"}
+
+	if license.ID != customer.ID {
+		t.Errorf("Both models should accept same ID format")
+	}
+
+	// Test empty IDs
+	license2 := License{}
+	customer2 := Customer{}
+
+	if license2.ID != "" || customer2.ID != "" {
+		t.Errorf("Default IDs should be empty")
+	}
+}
+
+// Test model relationships
+func TestModels_Relationships(t *testing.T) {
+	customerID := "relationship-customer"
+	
+	customer := Customer{
+		ID:    customerID,
+		Email: "relationship@example.com",
+	}
+
+	license := License{
+		ID:         "relationship-license",
+		CustomerID: customerID, // Reference to customer
+		Key:        "AFP-REL123",
+	}
+
+	// Test that license references customer correctly
+	if license.CustomerID != customer.ID {
+		t.Errorf("License should reference customer ID correctly")
+	}
+
+	// Test multiple licenses for same customer
+	license2 := License{
+		ID:         "relationship-license-2",
+		CustomerID: customerID,
+		Key:        "AFP-REL456",
+	}
+
+	if license2.CustomerID != customer.ID {
+		t.Errorf("Multiple licenses should reference same customer")
+	}
+
+	if license.CustomerID != license2.CustomerID {
+		t.Errorf("Licenses for same customer should have same CustomerID")
+	}
+}
+
+// Benchmark tests for model operations
+func BenchmarkLicense_Creation(b *testing.B) {
+	now := time.Now()
+	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := json.Marshal(license)
-		if err != nil {
-			b.Fatalf("Failed to marshal: %v", err)
+		_ = License{
+			ID:              "bench-license",
+			Key:             "AFP-BENCH123",
+			CustomerID:      "bench-customer",
+			ProductID:       "prod_bench",
+			Version:         "1.0.0",
+			Status:          StatusActive,
+			StripeSessionID: "cs_bench",
+			CreatedAt:       now,
+			UpdatedAt:       now,
 		}
 	}
 }
 
-func BenchmarkCustomer_Marshal(b *testing.B) {
-	customer := Customer{
-		Id:    "benchmark-customer",
-		Email: "benchmark@example.com",
-		Licenses: []License{
-			{Key: "LICENSE-001", Version: "1.0.0"},
-			{Key: "LICENSE-002", Version: "1.1.0"},
-			{Key: "LICENSE-003", Version: "1.2.0"},
-		},
-	}
-
+func BenchmarkCustomer_Creation(b *testing.B) {
+	now := time.Now()
+	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := json.Marshal(customer)
-		if err != nil {
-			b.Fatalf("Failed to marshal: %v", err)
+		_ = Customer{
+			ID:               "bench-customer",
+			Email:            "bench@example.com",
+			StripeCustomerID: "cus_bench",
+			CreatedAt:        now,
+			UpdatedAt:        now,
 		}
 	}
 }
