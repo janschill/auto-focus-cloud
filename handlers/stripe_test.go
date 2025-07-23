@@ -136,6 +136,7 @@ func TestStripeWebhook_UnhandledEventType(t *testing.T) {
 
 	t.Setenv("STRIPE_SECRET_KEY", "sk_test_123")
 	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+	t.Setenv("TEST_MODE", "true")
 
 	server.Stripe(w, req)
 
