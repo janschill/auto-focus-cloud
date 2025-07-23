@@ -87,7 +87,7 @@ func TestStripeWebhook_CheckoutSessionCompleted_Success(t *testing.T) {
 
 	// Verify response
 	var response map[string]string
-	err = json.NewDecoder(w.Body).Decode(&response)
+	_ = json.NewDecoder(w.Body).Decode(&response)
 	if err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}

@@ -204,12 +204,12 @@ func TestExtractMajorVersion_EdgeCases(t *testing.T) {
 // Benchmark version functions
 func BenchmarkIsCompatible(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		IsCompatible("1.0.0", "1.5.0")
+		_, _ = IsCompatible("1.0.0", "1.5.0")
 	}
 }
 
 func BenchmarkExtractMajorVersion(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		ExtractMajorVersion("1.2.3")
+		_, _ = ExtractMajorVersion("1.2.3")
 	}
 }

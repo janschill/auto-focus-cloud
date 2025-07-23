@@ -89,7 +89,7 @@ func TestCustomerModel_EmailFormats(t *testing.T) {
 
 func TestCustomer_TimeFields(t *testing.T) {
 	now := time.Now()
-	
+
 	customer := Customer{
 		ID:        "time-test",
 		Email:     "time@example.com",
@@ -109,7 +109,7 @@ func TestCustomer_TimeFields(t *testing.T) {
 	later := now.Add(time.Hour)
 	customer.UpdatedAt = later
 
-	if customer.UpdatedAt == now {
+	if customer.UpdatedAt.Equal(now) {
 		t.Error("UpdatedAt should be updated to new time")
 	}
 
@@ -150,7 +150,7 @@ func TestCustomer_StripeIntegration(t *testing.T) {
 
 			// Verify the field is stored correctly
 			if customer.StripeCustomerID != tt.stripeCustomerID {
-				t.Errorf("Expected StripeCustomerID %s, got %s", 
+				t.Errorf("Expected StripeCustomerID %s, got %s",
 					tt.stripeCustomerID, customer.StripeCustomerID)
 			}
 
@@ -158,6 +158,7 @@ func TestCustomer_StripeIntegration(t *testing.T) {
 			if tt.stripeCustomerID != "" && !tt.expectedValid {
 				if len(tt.stripeCustomerID) < 4 || !startsWithCus(tt.stripeCustomerID) {
 					// This is expected for invalid formats
+					t.Logf("Invalid Stripe customer ID format detected: %s", tt.stripeCustomerID)
 				}
 			}
 		})
@@ -184,7 +185,7 @@ func TestCustomer_Relationships(t *testing.T) {
 
 func TestCustomer_Equality(t *testing.T) {
 	now := time.Now()
-	
+
 	customer1 := Customer{
 		ID:               "same",
 		Email:            "same@example.com",
@@ -217,7 +218,7 @@ func startsWithCus(s string) bool {
 // Benchmark customer operations
 func BenchmarkCustomerModel_Creation(b *testing.B) {
 	now := time.Now()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = Customer{
@@ -238,7 +239,7 @@ func BenchmarkCustomer_FieldAccess(b *testing.B) {
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = customer.ID

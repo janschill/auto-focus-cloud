@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	godotenv.Load()
+	_ = godotenv.Load()
 
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              os.Getenv("SENTRY_DSN"),
@@ -26,7 +26,11 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create storage: ", err)
 	}
-	defer storage.Close()
+	defer func() {
+		if err := storage.Close(); err != nil {
+			log.Printf("Failed to close storage: %v", err)
+		}
+	}()
 
 	srv := handlers.NewHttpServer(storage)
 

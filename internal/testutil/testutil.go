@@ -217,7 +217,7 @@ func NewBenchmarkHelper(numCustomers, licensesPerCustomer int) *BenchmarkHelper 
 	// Create test data
 	for i := 0; i < numCustomers; i++ {
 		customer := CreateTestCustomer(fmt.Sprintf("bench-customer-%d", i), fmt.Sprintf("bench%d@example.com", i))
-		storage.SaveCustomer(ctx, &customer)
+		_ = storage.SaveCustomer(ctx, &customer)
 
 		for j := 0; j < licensesPerCustomer; j++ {
 			license := CreateTestLicense(
@@ -225,7 +225,7 @@ func NewBenchmarkHelper(numCustomers, licensesPerCustomer int) *BenchmarkHelper 
 				fmt.Sprintf("AFP-BENCH%d%d", i, j),
 				customer.ID,
 			)
-			storage.SaveLicense(ctx, &license)
+			_ = storage.SaveLicense(ctx, &license)
 		}
 	}
 
@@ -269,7 +269,7 @@ func RunValidationTestCases(t *testing.T, server *handlers.Server, testCases []V
 			if tc.ExpectedStatus >= 400 {
 				// Error response expected
 				var response map[string]string
-				json.NewDecoder(w.Body).Decode(&response)
+				_ = json.NewDecoder(w.Body).Decode(&response)
 				if response["error"] != tc.ExpectedMessage {
 					t.Errorf("Expected error '%s', got '%s'", tc.ExpectedMessage, response["error"])
 				}
@@ -329,7 +329,7 @@ func RunStorageTestSuite(t *testing.T, suite StorageTestSuite) {
 
 	t.Run("LicenseOperations", func(t *testing.T) {
 		customer := CreateTestCustomer("license-test", "license@example.com")
-		suite.Storage.SaveCustomer(ctx, &customer)
+		_ = suite.Storage.SaveCustomer(ctx, &customer)
 
 		license := CreateTestLicense("license1", "AFP-TEST123", "license-test")
 

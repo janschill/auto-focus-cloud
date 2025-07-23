@@ -90,7 +90,7 @@ func TestSend(t *testing.T) {
 
 			// Set test environment variables
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
+				_ = os.Setenv(key, value)
 			}
 
 			// Call the function
@@ -120,10 +120,10 @@ func TestSend_Integration(t *testing.T) {
 
 	// This test would require actual SMTP server or mock
 	// For now, we just test that with valid config, the function attempts to send
-	os.Setenv("SMTP_HOST", "smtp.example.com")
-	os.Setenv("SMTP_PORT", "587")
-	os.Setenv("SMTP_USER", "user@example.com")
-	os.Setenv("SMTP_PASS", "password")
+	_ = os.Setenv("SMTP_HOST", "smtp.example.com")
+	_ = os.Setenv("SMTP_PORT", "587")
+	_ = os.Setenv("SMTP_USER", "user@example.com")
+	_ = os.Setenv("SMTP_PASS", "password")
 
 	err := Send("test@example.com", "Test Subject", "Test Body")
 	// This will fail with connection error, which is expected

@@ -258,7 +258,7 @@ func TestFileStorage_CustomerOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create file storage: %v", err)
 	}
-	defer storage.Close()
+	defer func() { _ = storage.Close() }()
 
 	ctx := context.Background()
 
@@ -289,7 +289,7 @@ func TestFileStorage_LicenseOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create file storage: %v", err)
 	}
-	defer storage.Close()
+	defer func() { _ = storage.Close() }()
 
 	ctx := context.Background()
 
@@ -328,7 +328,7 @@ func TestSQLiteStorage_NewSQLiteStorage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create SQLite storage: %v", err)
 	}
-	defer storage.Close()
+	defer func() { _ = storage.Close() }()
 
 	// Verify file was created
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
@@ -344,7 +344,7 @@ func TestSQLiteStorage_CustomerOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create SQLite storage: %v", err)
 	}
-	defer storage.Close()
+	defer func() { _ = storage.Close() }()
 
 	ctx := context.Background()
 
@@ -396,7 +396,7 @@ func TestSQLiteStorage_LicenseOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create SQLite storage: %v", err)
 	}
-	defer storage.Close()
+	defer func() { _ = storage.Close() }()
 
 	ctx := context.Background()
 
@@ -510,7 +510,7 @@ func TestAllStorageTypes_Compatibility(t *testing.T) {
 	// Run same tests on all storage types
 	for _, st := range storageTypes {
 		t.Run(st.name, func(t *testing.T) {
-			defer st.storage.Close()
+			defer func() { _ = st.storage.Close() }()
 			ctx := context.Background()
 
 			// Test customer operations
@@ -557,7 +557,7 @@ func BenchmarkMemoryStorage_SaveCustomer(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		customer := createTestCustomer("bench", "bench@example.com")
-		storage.SaveCustomer(ctx, &customer)
+		_ = storage.SaveCustomer(ctx, &customer)
 	}
 }
 
@@ -570,11 +570,11 @@ func BenchmarkMemoryStorage_GetCustomer(b *testing.B) {
 
 	// Setup
 	customer := createTestCustomer("bench", "bench@example.com")
-	storage.SaveCustomer(ctx, &customer)
+	_ = storage.SaveCustomer(ctx, &customer)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		storage.GetCustomer(ctx, "bench")
+		_, _ = storage.GetCustomer(ctx, "bench")
 	}
 }
 
@@ -587,14 +587,14 @@ func BenchmarkMemoryStorage_FindLicenseByKey(b *testing.B) {
 
 	// Setup
 	customer := createTestCustomer("bench", "bench@example.com")
-	storage.SaveCustomer(ctx, &customer)
+	_ = storage.SaveCustomer(ctx, &customer)
 	
 	license := createTestLicense("bench_license", "AFP-BENCH123", "bench")
-	storage.SaveLicense(ctx, &license)
+	_ = storage.SaveLicense(ctx, &license)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		storage.FindLicenseByKey(ctx, "AFP-BENCH123")
+		_, _ = storage.FindLicenseByKey(ctx, "AFP-BENCH123")
 	}
 }
 
@@ -604,14 +604,14 @@ func BenchmarkSQLiteStorage_SaveCustomer(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create SQLite storage: %v", err)
 	}
-	defer storage.Close()
+	defer func() { _ = storage.Close() }()
 
 	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		customer := createTestCustomer("bench", "bench@example.com")
-		storage.SaveCustomer(ctx, &customer)
+		_ = storage.SaveCustomer(ctx, &customer)
 	}
 }
 
@@ -625,7 +625,7 @@ func TestMemoryStorage_ConcurrentAccess(t *testing.T) {
 
 	// Create test customer
 	customer := createTestCustomer("concurrent", "concurrent@example.com")
-	storage.SaveCustomer(ctx, &customer)
+	_ = storage.SaveCustomer(ctx, &customer)
 
 	// Run concurrent reads
 	done := make(chan bool, 10)

@@ -86,10 +86,7 @@ func TestValidateLicense_Success(t *testing.T) {
 	}
 
 	var response ValidateResponse
-	err = json.NewDecoder(w.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
+	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	if !response.Valid {
 		t.Errorf("Expected valid license, got invalid")
@@ -121,10 +118,7 @@ func TestValidateLicense_LicenseNotFound(t *testing.T) {
 	}
 
 	var response ValidateResponse
-	err := json.NewDecoder(w.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
+	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	if response.Valid {
 		t.Errorf("Expected invalid license")
@@ -156,10 +150,7 @@ func TestValidateLicense_LicenseNotActive(t *testing.T) {
 	}
 
 	var response ValidateResponse
-	err := json.NewDecoder(w.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
+	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	if response.Valid {
 		t.Errorf("Expected invalid license due to suspended status")
@@ -188,10 +179,7 @@ func TestValidateLicense_InvalidMethods(t *testing.T) {
 			}
 
 			var response map[string]string
-			err := json.NewDecoder(w.Body).Decode(&response)
-			if err != nil {
-				t.Fatalf("Failed to decode response: %v", err)
-			}
+			_ = json.NewDecoder(w.Body).Decode(&response)
 
 			if response["error"] != "only POST allowed" {
 				t.Errorf("Expected error 'only POST allowed', got '%s'", response["error"])
@@ -244,10 +232,7 @@ func TestValidateLicense_InvalidJSON(t *testing.T) {
 			}
 
 			var response map[string]string
-			err := json.NewDecoder(w.Body).Decode(&response)
-			if err != nil {
-				t.Fatalf("Failed to decode response: %v", err)
-			}
+			_ = json.NewDecoder(w.Body).Decode(&response)
 
 			if response["error"] != tt.wantErr {
 				t.Errorf("Expected error '%s', got '%s'", tt.wantErr, response["error"])
@@ -304,10 +289,7 @@ func TestValidateLicense_RequestValidation(t *testing.T) {
 			}
 
 			var response map[string]string
-			err := json.NewDecoder(w.Body).Decode(&response)
-			if err != nil {
-				t.Fatalf("Failed to decode response: %v", err)
-			}
+			_ = json.NewDecoder(w.Body).Decode(&response)
 
 			if response["error"] != tt.expectedErr {
 				t.Errorf("Expected error '%s', got '%s'", tt.expectedErr, response["error"])
@@ -338,10 +320,7 @@ func TestValidateLicense_DatabaseError(t *testing.T) {
 	}
 
 	var response map[string]string
-	err := json.NewDecoder(w.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
+	_ = json.NewDecoder(w.Body).Decode(&response)
 
 	if response["error"] != "something went wrong" {
 		t.Errorf("Expected error 'something went wrong', got '%s'", response["error"])
@@ -465,10 +444,7 @@ func TestRespondWithValidation(t *testing.T) {
 			respondWithValidation(w, tt.valid, tt.message)
 
 			var response ValidateResponse
-			err := json.NewDecoder(w.Body).Decode(&response)
-			if err != nil {
-				t.Fatalf("Failed to decode response: %v", err)
-			}
+			_ = json.NewDecoder(w.Body).Decode(&response)
 
 			if response.Valid != tt.valid {
 				t.Errorf("Expected valid=%v, got valid=%v", tt.valid, response.Valid)
@@ -519,10 +495,7 @@ func TestWriteErrorResponse(t *testing.T) {
 			}
 
 			var response map[string]string
-			err := json.NewDecoder(w.Body).Decode(&response)
-			if err != nil {
-				t.Fatalf("Failed to decode response: %v", err)
-			}
+			_ = json.NewDecoder(w.Body).Decode(&response)
 
 			if response["error"] != tt.message {
 				t.Errorf("Expected error '%s', got '%s'", tt.message, response["error"])

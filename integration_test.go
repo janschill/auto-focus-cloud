@@ -184,7 +184,7 @@ func TestWorkflow_MultipleCustomersAndLicenses(t *testing.T) {
 		}
 
 		var response handlers.ValidateResponse
-		json.NewDecoder(w.Body).Decode(&response)
+		_ = json.NewDecoder(w.Body).Decode(&response)
 
 		if !response.Valid {
 			t.Errorf("License %d should be valid, got invalid: %s", i, response.Message)
@@ -273,27 +273,27 @@ func TestWorkflow_ErrorHandling(t *testing.T) {
 	server := handlers.NewHttpServer(storage)
 
 	tests := []struct {
-		name           string
-		licenseKey     string
-		expectedValid  bool
+		name            string
+		licenseKey      string
+		expectedValid   bool
 		expectedMessage string
 	}{
 		{
-			name:           "nonexistent license",
-			licenseKey:     "AFP-NOTFOUND",
-			expectedValid:  false,
+			name:            "nonexistent license",
+			licenseKey:      "AFP-NOTFOUND",
+			expectedValid:   false,
 			expectedMessage: "license not found",
 		},
 		{
-			name:           "empty license key",
-			licenseKey:     "",
-			expectedValid:  false,
+			name:            "empty license key",
+			licenseKey:      "",
+			expectedValid:   false,
 			expectedMessage: "", // This will be caught at validation level
 		},
 		{
-			name:           "malformed license key",
-			licenseKey:     "INVALID-KEY-FORMAT",
-			expectedValid:  false,
+			name:            "malformed license key",
+			licenseKey:      "INVALID-KEY-FORMAT",
+			expectedValid:   false,
 			expectedMessage: "license not found",
 		},
 	}
@@ -338,7 +338,7 @@ func TestWorkflow_ErrorHandling(t *testing.T) {
 			}
 
 			var response handlers.ValidateResponse
-			json.NewDecoder(w.Body).Decode(&response)
+			_ = json.NewDecoder(w.Body).Decode(&response)
 
 			if response.Valid != tt.expectedValid {
 				t.Errorf("Expected valid=%v, got valid=%v", tt.expectedValid, response.Valid)
@@ -407,9 +407,10 @@ func TestWorkflow_RateLimiting(t *testing.T) {
 		w := httptest.NewRecorder()
 		server.Mux.ServeHTTP(w, req)
 
-		if w.Code == http.StatusTooManyRequests {
+		switch w.Code {
+		case http.StatusTooManyRequests:
 			rateLimitedCount++
-		} else if w.Code == http.StatusOK {
+		case http.StatusOK:
 			successCount++
 		}
 	}
@@ -444,7 +445,7 @@ func TestWorkflow_ConcurrentRequests(t *testing.T) {
 		UpdatedAt:        time.Now(),
 	}
 
-	storage.SaveCustomer(ctx, &customer)
+	_ = storage.SaveCustomer(ctx, &customer)
 
 	license := models.License{
 		ID:              "concurrent-license",
@@ -458,7 +459,7 @@ func TestWorkflow_ConcurrentRequests(t *testing.T) {
 		UpdatedAt:       time.Now(),
 	}
 
-	storage.SaveLicense(ctx, &license)
+	_ = storage.SaveLicense(ctx, &license)
 
 	// Run concurrent license validations
 	numGoroutines := 10
@@ -485,7 +486,7 @@ func TestWorkflow_ConcurrentRequests(t *testing.T) {
 
 				if success {
 					var response handlers.ValidateResponse
-					json.NewDecoder(w.Body).Decode(&response)
+					_ = json.NewDecoder(w.Body).Decode(&response)
 					success = response.Valid
 				}
 
@@ -515,11 +516,11 @@ func TestWorkflow_ConcurrentRequests(t *testing.T) {
 
 func createMockStripeCheckoutSession(customerEmail, sessionID string) map[string]interface{} {
 	return map[string]interface{}{
-		"id":              sessionID,
-		"customer_email":  customerEmail,
-		"amount_total":    2999,
-		"currency":        "usd",
-		"payment_status":  "paid",
+		"id":             sessionID,
+		"customer_email": customerEmail,
+		"amount_total":   2999,
+		"currency":       "usd",
+		"payment_status": "paid",
 		"customer": map[string]interface{}{
 			"id": "cus_" + sessionID,
 		},
@@ -560,7 +561,7 @@ func BenchmarkFullWorkflow_StripeToValidation(b *testing.B) {
 			UpdatedAt:        time.Now(),
 		}
 
-		storage.SaveCustomer(ctx, &customer)
+		_ = storage.SaveCustomer(ctx, &customer)
 
 		license := models.License{
 			ID:              "bench-license-" + string(rune(i)),
@@ -574,7 +575,7 @@ func BenchmarkFullWorkflow_StripeToValidation(b *testing.B) {
 			UpdatedAt:       time.Now(),
 		}
 
-		storage.SaveLicense(ctx, &license)
+		_ = storage.SaveLicense(ctx, &license)
 	}
 
 	b.ResetTimer()

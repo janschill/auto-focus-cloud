@@ -39,7 +39,11 @@ func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
+		logger.Error("Failed to encode health response", map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
 }
 
 type Middleware func(next http.Handler) http.Handler

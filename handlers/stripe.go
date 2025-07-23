@@ -125,7 +125,11 @@ func (s *Server) Stripe(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"received": "true"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"received": "true"}); err != nil {
+		logger.Error("Failed to encode webhook response", map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
 }
 
 func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.CheckoutSession) error {

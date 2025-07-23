@@ -81,10 +81,14 @@ func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
 
 func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ValidateResponse{
+	if err := json.NewEncoder(w).Encode(ValidateResponse{
 		Valid:   valid,
 		Message: message,
-	})
+	}); err != nil {
+		logger.Error("Failed to encode validation response", map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
 }
 
 func (lr LicenseRequest) validate() error {
@@ -98,5 +102,9 @@ func (lr LicenseRequest) validate() error {
 func writeErrorResponse(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": message})
+	if err := json.NewEncoder(w).Encode(map[string]string{"error": message}); err != nil {
+		logger.Error("Failed to encode error response", map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
 }

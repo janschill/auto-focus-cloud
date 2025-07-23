@@ -143,7 +143,11 @@ func (f *FileStorage) loadFromFile() error {
 		}
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Failed to close file: %v", err)
+		}
+	}()
 
 	var customers CustomerList
 	err = json.NewDecoder(file).Decode(&customers)
@@ -410,7 +414,11 @@ func (s *SQLiteStorage) FindLicensesByCustomer(ctx context.Context, customerID s
 	if err != nil {
 		return nil, fmt.Errorf("failed to query licenses: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("Failed to close rows: %v", err)
+		}
+	}()
 
 	var licenses []*models.License
 
@@ -466,7 +474,5 @@ func (s *SQLiteStorage) SaveLicense(ctx context.Context, license *models.License
 }
 
 func (s *SQLiteStorage) Close() error {
-	s.db.Close()
-
-	return nil
+	return s.db.Close()
 }
