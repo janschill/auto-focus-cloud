@@ -2,3 +2,6 @@
 .env
 mise.toml
 .claude/
+storage/data
+coverage*
+stripe/

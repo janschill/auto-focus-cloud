@@ -1,0 +1,106 @@
+{
+  "licenses": [
+    {
+      "id": "test-license-1",
+      "license_key": "ABCD-EFGH-IJKL-MNOP",
+      "owner_name": "John Doe",
+      "email": "john@example.com",
+      "created_at": "2024-01-01T00:00:00Z",
+      "expires_at": "2025-12-31T23:59:59Z",
+      "max_apps": 3,
+      "app_version": "1.0.0",
+      "status": "active",
+      "max_activations": 3
+    },
+    {
+      "id": "test-license-2",
+      "license_key": "QRST-UVWX-YZAB-CDEF",
+      "owner_name": "Jane Smith",
+      "email": "jane@example.com",
+      "created_at": "2024-01-15T00:00:00Z",
+      "expires_at": "2025-06-30T23:59:59Z",
+      "max_apps": 1,
+      "app_version": "1.0.0",
+      "status": "active",
+      "max_activations": 1
+    },
+    {
+      "id": "test-license-expired",
+      "license_key": "EXPR-IRED-TEST-KEY1",
+      "owner_name": "Expired User",
+      "email": "expired@example.com",
+      "created_at": "2023-01-01T00:00:00Z",
+      "expires_at": "2023-12-31T23:59:59Z",
+      "max_apps": 3,
+      "app_version": "1.0.0",
+      "status": "active",
+      "max_activations": 3
+    },
+    {
+      "id": "test-license-suspended",
+      "license_key": "SUSP-ENDE-D-TEST-KEY",
+      "owner_name": "Suspended User",
+      "email": "suspended@example.com",
+      "created_at": "2024-01-01T00:00:00Z",
+      "expires_at": "2025-12-31T23:59:59Z",
+      "max_apps": 3,
+      "app_version": "1.0.0",
+      "status": "suspended",
+      "max_activations": 3
+    },
+    {
+      "id": "test-license-unlimited",
+      "license_key": "UNLI-MITE-D-TEST-KEY",
+      "owner_name": "Unlimited User",
+      "email": "unlimited@example.com",
+      "created_at": "2024-01-01T00:00:00Z",
+      "expires_at": null,
+      "max_apps": -1,
+      "app_version": "1.0.0",
+      "status": "active",
+      "max_activations": -1
+    }
+  ],
+  "activations": [
+    {
+      "id": "activation-1",
+      "license_id": "test-license-1",
+      "instance_id": "instance-001",
+      "activated_at": "2024-01-01T10:00:00Z",
+      "last_validated_at": "2024-01-02T10:00:00Z",
+      "app_version": "1.0.0",
+      "platform": "macos",
+      "is_active": true
+    },
+    {
+      "id": "activation-2",
+      "license_id": "test-license-1",
+      "instance_id": "instance-002",
+      "activated_at": "2024-01-01T11:00:00Z",
+      "last_validated_at": "2024-01-02T11:00:00Z",
+      "app_version": "1.0.0",
+      "platform": "windows",
+      "is_active": true
+    },
+    {
+      "id": "activation-3",
+      "license_id": "test-license-2",
+      "instance_id": "instance-003",
+      "activated_at": "2024-01-15T10:00:00Z",
+      "last_validated_at": "2024-01-16T10:00:00Z",
+      "app_version": "1.0.0",
+      "platform": "linux",
+      "is_active": true
+    },
+    {
+      "id": "activation-4",
+      "license_id": "test-license-1",
+      "instance_id": "instance-004",
+      "activated_at": "2024-01-01T12:00:00Z",
+      "last_validated_at": "2024-01-01T12:00:00Z",
+      "app_version": "1.0.0",
+      "platform": "macos",
+      "is_active": false
+    }
+  ]
+}
