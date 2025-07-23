@@ -3,12 +3,25 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"auto-focus.app/cloud/handlers"
 	"auto-focus.app/cloud/storage"
+	"github.com/getsentry/sentry-go"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	godotenv.Load()
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		TracesSampleRate: 1.0,
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+
 	storage, err := storage.NewSQLiteStorage("storage/data/autofocus.db")
 	if err != nil {
 		log.Fatal("Failed to create storage: ", err)
