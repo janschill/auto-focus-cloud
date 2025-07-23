@@ -4,7 +4,8 @@
       "Bash(mkdir:*)",
       "Bash(go test:*)",
       "Bash(grep:*)",
-      "Bash(go tool cover:*)"
+      "Bash(go tool cover:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
