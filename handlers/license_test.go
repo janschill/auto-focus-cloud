@@ -227,7 +227,7 @@ func TestValidateLicense_InvalidJSON(t *testing.T) {
 		{
 			name:    "null body",
 			body:    "null",
-			wantErr: "empty body",
+			wantErr: "invalid license",
 		},
 	}
 

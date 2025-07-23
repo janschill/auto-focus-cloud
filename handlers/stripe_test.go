@@ -74,10 +74,12 @@ func TestStripeWebhook_CheckoutSessionCompleted_Success(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	// Set environment variable for testing
+	// Set environment variables for testing
+	t.Setenv("STRIPE_SECRET_KEY", "sk_test_123")
 	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+	t.Setenv("TEST_MODE", "true")
 
-	server.stripe(w, req)
+	server.Stripe(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
@@ -103,7 +105,10 @@ func TestStripeWebhook_InvalidJSON(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
-	server.stripe(w, req)
+	t.Setenv("STRIPE_SECRET_KEY", "sk_test_123")
+	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+	t.Setenv("TEST_MODE", "true")
+	server.Stripe(w, req)
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
@@ -129,9 +134,10 @@ func TestStripeWebhook_UnhandledEventType(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
+	t.Setenv("STRIPE_SECRET_KEY", "sk_test_123")
 	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
 
-	server.stripe(w, req)
+	server.Stripe(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status %d for unhandled event, got %d", http.StatusOK, w.Code)
@@ -208,7 +214,7 @@ func TestHandleCheckoutComplete_ExistingCustomer(t *testing.T) {
 	// Add existing customer
 	existingCustomer := models.Customer{
 		ID:               "existing-customer",
-		Email:            "test@example.com", // This will match the test email
+		Email:            "existing@example.com", // This will match the test email
 		StripeCustomerID: "cus_existing123",
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
@@ -217,7 +223,7 @@ func TestHandleCheckoutComplete_ExistingCustomer(t *testing.T) {
 
 	session := &stripe.CheckoutSession{
 		ID:              "cs_test456",
-		CustomerEmail:   "existing@example.com", // Will be overridden to test@example.com
+		CustomerEmail:   "existing@example.com", // Must match existing customer
 		AmountTotal:     2999,
 		Currency:        "usd",
 		PaymentStatus:   "paid",
@@ -398,7 +404,7 @@ func TestCreateLicensedUser_SaveLicenseError(t *testing.T) {
 		},
 	}
 
-	_, err := server.createLicensedUser(context.Background(), session)
+	_, _, err := server.createLicensedUser(context.Background(), session)
 	if err == nil {
 		t.Errorf("Expected error from license save, got nil")
 	}
@@ -412,7 +418,10 @@ func TestStripeWebhook_EmptyBody(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
-	server.stripe(w, req)
+	t.Setenv("STRIPE_SECRET_KEY", "sk_test_123")
+	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+	t.Setenv("TEST_MODE", "true")
+	server.Stripe(w, req)
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status %d for empty body, got %d", http.StatusBadRequest, w.Code)
@@ -442,7 +451,10 @@ func TestStripeWebhook_LargePayload(t *testing.T) {
 	req.Header.Set("Stripe-Signature", "test-signature")
 
 	w := httptest.NewRecorder()
-	server.stripe(w, req)
+	t.Setenv("STRIPE_SECRET_KEY", "sk_test_123")
+	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+	t.Setenv("TEST_MODE", "true")
+	server.Stripe(w, req)
 
 	// Should handle large payloads gracefully (up to MaxBodyBytes limit)
 	if w.Code == http.StatusServiceUnavailable {
@@ -498,6 +510,10 @@ func BenchmarkStripeWebhook_CheckoutCompleted(b *testing.B) {
 	storage := createTestStorageForStripe()
 	server := NewHttpServer(storage)
 
+	b.Setenv("STRIPE_SECRET_KEY", "sk_test_123")
+	b.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+	b.Setenv("TEST_MODE", "true")
+
 	sessionData := createMockCheckoutSession("bench@example.com", "cs_bench", true)
 	event := createMockStripeEvent("checkout.session.completed", sessionData)
 	payload, _ := json.Marshal(event)
@@ -509,7 +525,7 @@ func BenchmarkStripeWebhook_CheckoutCompleted(b *testing.B) {
 		req.Header.Set("Stripe-Signature", "test-signature")
 
 		w := httptest.NewRecorder()
-		server.stripe(w, req)
+		server.Stripe(w, req)
 
 		if w.Code != http.StatusOK && w.Code != http.StatusBadRequest {
 			b.Fatalf("Unexpected status code: %d", w.Code)

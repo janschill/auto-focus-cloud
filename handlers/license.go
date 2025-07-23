@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"auto-focus.app/cloud/internal/logger"
 	"auto-focus.app/cloud/models"
@@ -87,7 +88,7 @@ func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 }
 
 func (lr LicenseRequest) validate() error {
-	if lr.LicenseKey == "" {
+	if strings.TrimSpace(lr.LicenseKey) == "" {
 		return fmt.Errorf("license_key required")
 	}
 	// Empty app_version will be caught by version validation logic

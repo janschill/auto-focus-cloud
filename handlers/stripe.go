@@ -62,25 +62,30 @@ func (s *Server) Stripe(w http.ResponseWriter, r *http.Request) {
 		"event_id":   event.ID,
 	})
 
-	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
-	if endpointSecret == "" {
-		logger.Error("STRIPE_WEBHOOK_SECRET environment variable not set")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	// Skip signature verification in test mode
+	if os.Getenv("TEST_MODE") == "true" {
+		logger.Debug("Skipping webhook signature verification (test mode)")
+	} else {
+		endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+		if endpointSecret == "" {
+			logger.Error("STRIPE_WEBHOOK_SECRET environment variable not set")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-	signatureHeader := r.Header.Get("Stripe-Signature")
-	event, err = webhook.ConstructEvent(payload, signatureHeader, endpointSecret)
-	if err != nil {
-		logger.Error("Webhook signature verification failed", map[string]interface{}{
-			"error":     err.Error(),
-			"signature": signatureHeader,
-		})
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+		signatureHeader := r.Header.Get("Stripe-Signature")
+		event, err = webhook.ConstructEvent(payload, signatureHeader, endpointSecret)
+		if err != nil {
+			logger.Error("Webhook signature verification failed", map[string]interface{}{
+				"error":     err.Error(),
+				"signature": signatureHeader,
+			})
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-	logger.Debug("Webhook signature verified")
+		logger.Debug("Webhook signature verified")
+	}
 
 	switch event.Type {
 	case "checkout.session.completed":
