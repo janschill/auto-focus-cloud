@@ -27,8 +27,8 @@ func NewHttpServer(db storage.Storage) *Server {
 
 	mux.Handle("/health", http.HandlerFunc(s.Health))
 	// mux.Handle("/api/v1/licenses", http.HandlerFunc(db.list))
-	mux.Handle("/api/v1/licenses/validate", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
-	mux.Handle("/api/v1/webhooks/stripe", s.chain(s.withLogging, s.withRateLimit)(http.HandlerFunc(s.stripe)))
+	mux.Handle("/api/v1/licenses/validate", s.chain(s.withCORS, s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
+	mux.Handle("/api/v1/webhooks/stripe", s.chain(s.withCORS, s.withLogging, s.withRateLimit)(http.HandlerFunc(s.Stripe)))
 
 	return s
 }
@@ -52,6 +52,21 @@ func (s *Server) chain(middleware ...Middleware) func(http.Handler) http.Handler
 		}
 		return handler
 	}
+}
+
+func (s *Server) withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) withRateLimit(next http.Handler) http.Handler {
