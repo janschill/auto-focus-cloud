@@ -1,6 +1,6 @@
 module auto-focus.app/cloud
 
-go 1.24.2
+go 1.23
 
 require (
 	github.com/getsentry/sentry-go v0.34.1
