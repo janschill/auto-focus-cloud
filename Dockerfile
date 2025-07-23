@@ -17,8 +17,6 @@ RUN apk --no-cache add ca-certificates sqlite
 
 WORKDIR /root/
 
-# Create storage directory for SQLite database
-RUN mkdir -p storage/data
 
 COPY --from=builder /app/auto-focus-cloud .
 

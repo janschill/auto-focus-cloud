@@ -21,6 +21,10 @@ if [ -f "${INSTALL_DIR}/auto-focus-cloud" ]; then
     cp "${INSTALL_DIR}/auto-focus-cloud" "${INSTALL_DIR}/auto-focus-cloud.backup"
 fi
 
+# Create storage directory
+echo "📁 Creating storage directory"
+mkdir -p ${INSTALL_DIR}/storage/data
+
 # Copy new binary (only if we're not already in the install dir)
 echo "📁 Installing new binary"
 if [ "$(pwd)" != "${INSTALL_DIR}" ]; then
