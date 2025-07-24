@@ -359,7 +359,7 @@ func TestWorkflow_HealthCheck(t *testing.T) {
 
 	server := handlers.NewHttpServer(storage)
 
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequest(http.MethodGet, "/v1/health", nil)
 	w := httptest.NewRecorder()
 
 	server.Mux.ServeHTTP(w, req)
