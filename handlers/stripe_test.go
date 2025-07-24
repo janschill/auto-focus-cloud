@@ -33,11 +33,11 @@ func createMockStripeEvent(eventType string, sessionData map[string]interface{})
 
 func createMockCheckoutSession(customerEmail, sessionID string, hasCustomer bool) map[string]interface{} {
 	session := map[string]interface{}{
-		"id":              sessionID,
-		"customer_email":  customerEmail,
-		"amount_total":    2999,
-		"currency":        "usd",
-		"payment_status":  "paid",
+		"id":             sessionID,
+		"customer_email": customerEmail,
+		"amount_total":   2999,
+		"currency":       "usd",
+		"payment_status": "paid",
 		"metadata": map[string]interface{}{
 			"product_id":      "prod_test123",
 			"license_version": "1.0.0",
@@ -68,7 +68,7 @@ func TestStripeWebhook_CheckoutSessionCompleted_Success(t *testing.T) {
 	}
 
 	// Create request
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer(payload))
+	req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Stripe-Signature", "test-signature")
 
@@ -101,7 +101,7 @@ func TestStripeWebhook_InvalidJSON(t *testing.T) {
 	storage := createTestStorageForStripe()
 	server := NewHttpServer(storage)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBufferString("invalid json"))
+	req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBufferString("invalid json"))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -128,7 +128,7 @@ func TestStripeWebhook_UnhandledEventType(t *testing.T) {
 	}
 
 	payload, _ := json.Marshal(event)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer(payload))
+	req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Stripe-Signature", "test-signature")
 
@@ -150,12 +150,12 @@ func TestHandleCheckoutComplete_NewCustomer(t *testing.T) {
 	server := NewHttpServer(storage)
 
 	session := &stripe.CheckoutSession{
-		ID:              "cs_test123",
-		CustomerEmail:   "newcustomer@example.com",
-		AmountTotal:     2999,
-		Currency:        "usd",
-		PaymentStatus:   "paid",
-		Customer:        &stripe.Customer{ID: "cus_new123"},
+		ID:            "cs_test123",
+		CustomerEmail: "newcustomer@example.com",
+		AmountTotal:   2999,
+		Currency:      "usd",
+		PaymentStatus: "paid",
+		Customer:      &stripe.Customer{ID: "cus_new123"},
 		Metadata: map[string]string{
 			"product_id":      "prod_test123",
 			"license_version": "1.0.0",
@@ -223,12 +223,12 @@ func TestHandleCheckoutComplete_ExistingCustomer(t *testing.T) {
 	storage.Data["existing-customer"] = existingCustomer
 
 	session := &stripe.CheckoutSession{
-		ID:              "cs_test456",
-		CustomerEmail:   "existing@example.com", // Must match existing customer
-		AmountTotal:     2999,
-		Currency:        "usd",
-		PaymentStatus:   "paid",
-		Customer:        &stripe.Customer{ID: "cus_existing123"},
+		ID:            "cs_test456",
+		CustomerEmail: "existing@example.com", // Must match existing customer
+		AmountTotal:   2999,
+		Currency:      "usd",
+		PaymentStatus: "paid",
+		Customer:      &stripe.Customer{ID: "cus_existing123"},
 		Metadata: map[string]string{
 			"product_id":      "prod_test456",
 			"license_version": "2.0.0",
@@ -354,19 +354,19 @@ func TestCreateLicense(t *testing.T) {
 func TestGenerateLicenseKey(t *testing.T) {
 	// Generate multiple keys to ensure uniqueness and format
 	keys := make(map[string]bool)
-	
+
 	for i := 0; i < 100; i++ {
 		key := generateLicenseKey()
-		
+
 		// Check format
 		if len(key) != 12 { // "AFP-" + 8 characters
 			t.Errorf("Expected key length 12, got %d for key '%s'", len(key), key)
 		}
-		
+
 		if key[:4] != "AFP-" {
 			t.Errorf("Expected key to start with 'AFP-', got '%s'", key)
 		}
-		
+
 		// Check uniqueness
 		if keys[key] {
 			t.Errorf("Generated duplicate key: %s", key)
@@ -415,7 +415,7 @@ func TestStripeWebhook_EmptyBody(t *testing.T) {
 	storage := createTestStorageForStripe()
 	server := NewHttpServer(storage)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer([]byte{}))
+	req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer([]byte{}))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -447,7 +447,7 @@ func TestStripeWebhook_LargePayload(t *testing.T) {
 	}
 
 	payload, _ := json.Marshal(largeEvent)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer(payload))
+	req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Stripe-Signature", "test-signature")
 
@@ -521,7 +521,7 @@ func BenchmarkStripeWebhook_CheckoutCompleted(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer(payload))
+		req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer(payload))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Stripe-Signature", "test-signature")
 

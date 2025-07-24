@@ -18,7 +18,7 @@ func createTestStorage() *storage.MemoryStorage {
 	storage := &storage.MemoryStorage{
 		Data: make(storage.Database),
 	}
-	
+
 	// Add test customer
 	testCustomer := models.Customer{
 		ID:               "test-customer-1",
@@ -27,14 +27,14 @@ func createTestStorage() *storage.MemoryStorage {
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 	}
-	
+
 	storage.Data["test-customer-1"] = testCustomer
-	
+
 	// Initialize licenses map
 	if storage.Licenses == nil {
 		storage.Licenses = make(map[string]models.License)
 	}
-	
+
 	// Add test licenses
 	storage.Licenses["license-1"] = models.License{
 		ID:         "license-1",
@@ -46,7 +46,7 @@ func createTestStorage() *storage.MemoryStorage {
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
-	
+
 	storage.Licenses["license-2"] = models.License{
 		ID:         "license-2",
 		Key:        "AFP-SUSPENDED",
@@ -57,7 +57,7 @@ func createTestStorage() *storage.MemoryStorage {
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
-	
+
 	return storage
 }
 
@@ -75,7 +75,7 @@ func TestValidateLicense_Success(t *testing.T) {
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -107,7 +107,7 @@ func TestValidateLicense_LicenseNotFound(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -139,7 +139,7 @@ func TestValidateLicense_LicenseNotActive(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -169,7 +169,7 @@ func TestValidateLicense_InvalidMethods(t *testing.T) {
 
 	for _, method := range methods {
 		t.Run("method_"+method, func(t *testing.T) {
-			req := httptest.NewRequest(method, "/api/v1/licenses/validate", nil)
+			req := httptest.NewRequest(method, "/v1/licenses/validate", nil)
 			w := httptest.NewRecorder()
 
 			server.ValidateLicense(w, req)
@@ -221,7 +221,7 @@ func TestValidateLicense_InvalidJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBufferString(tt.body))
+			req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBufferString(tt.body))
 			req.Header.Set("Content-Type", "application/json")
 
 			w := httptest.NewRecorder()
@@ -278,7 +278,7 @@ func TestValidateLicense_RequestValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			body, _ := json.Marshal(tt.request)
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+			req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			w := httptest.NewRecorder()
@@ -309,7 +309,7 @@ func TestValidateLicense_DatabaseError(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -337,7 +337,7 @@ func TestValidateLicense_ContentTypeAndHeaders(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -366,7 +366,7 @@ func TestValidateLicense_LargePayload(t *testing.T) {
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -558,7 +558,7 @@ func BenchmarkValidateLicense_Success(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+		req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
@@ -583,7 +583,7 @@ func BenchmarkValidateLicense_NotFound(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+		req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()

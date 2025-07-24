@@ -36,7 +36,7 @@ func TestFullWorkflow_StripeWebhookToLicenseValidation(t *testing.T) {
 	}
 
 	// Send webhook
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer(payload))
+	req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Stripe-Signature", "test-signature")
 
@@ -84,7 +84,7 @@ func TestFullWorkflow_StripeWebhookToLicenseValidation(t *testing.T) {
 		t.Fatalf("Failed to marshal validate request: %v", err)
 	}
 
-	validateHttpReq := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+	validateHttpReq := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 	validateHttpReq.Header.Set("Content-Type", "application/json")
 
 	validateW := httptest.NewRecorder()
@@ -135,7 +135,7 @@ func TestWorkflow_MultipleCustomersAndLicenses(t *testing.T) {
 		stripeEvent := createMockStripeWebhookEvent("checkout.session.completed", checkoutSession)
 
 		payload, _ := json.Marshal(stripeEvent)
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer(payload))
+		req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer(payload))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Stripe-Signature", "test-signature")
 
@@ -173,7 +173,7 @@ func TestWorkflow_MultipleCustomersAndLicenses(t *testing.T) {
 		}
 
 		validateBody, _ := json.Marshal(validateReq)
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+		req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 		req.Header.Set("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()
@@ -239,7 +239,7 @@ func TestWorkflow_SuspendedLicense(t *testing.T) {
 	}
 
 	validateBody, _ := json.Marshal(validateReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -308,7 +308,7 @@ func TestWorkflow_ErrorHandling(t *testing.T) {
 				}
 
 				validateBody, _ := json.Marshal(validateReq)
-				req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+				req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 				req.Header.Set("Content-Type", "application/json")
 
 				w := httptest.NewRecorder()
@@ -327,7 +327,7 @@ func TestWorkflow_ErrorHandling(t *testing.T) {
 			}
 
 			validateBody, _ := json.Marshal(validateReq)
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+			req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 			req.Header.Set("Content-Type", "application/json")
 
 			w := httptest.NewRecorder()
@@ -400,7 +400,7 @@ func TestWorkflow_RateLimiting(t *testing.T) {
 
 	// Make 20 requests rapidly
 	for i := 0; i < 20; i++ {
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+		req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 		req.Header.Set("Content-Type", "application/json")
 		req.RemoteAddr = "127.0.0.1:12345" // Same IP for all requests
 
@@ -475,7 +475,7 @@ func TestWorkflow_ConcurrentRequests(t *testing.T) {
 				}
 
 				validateBody, _ := json.Marshal(validateReq)
-				req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+				req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 				req.Header.Set("Content-Type", "application/json")
 				req.RemoteAddr = fmt.Sprintf("127.0.%d.1:12345", goroutineID+1) // Different IPs to avoid rate limiting
 
@@ -590,7 +590,7 @@ func BenchmarkFullWorkflow_StripeToValidation(b *testing.B) {
 		}
 
 		validateBody, _ := json.Marshal(validateReq)
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(validateBody))
+		req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(validateBody))
 		req.Header.Set("Content-Type", "application/json")
 
 		w := httptest.NewRecorder()

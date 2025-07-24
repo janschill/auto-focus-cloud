@@ -106,13 +106,13 @@ func TestServer_RoutingConfiguration(t *testing.T) {
 		{
 			name:           "license validate - GET should fail",
 			method:         http.MethodGet,
-			path:           "/api/v1/licenses/validate",
+			path:           "/v1/licenses/validate",
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
 		{
 			name:           "license validate - POST should work",
 			method:         http.MethodPost,
-			path:           "/api/v1/licenses/validate",
+			path:           "/v1/licenses/validate",
 			expectedStatus: http.StatusBadRequest, // Bad request due to empty body
 		},
 		{

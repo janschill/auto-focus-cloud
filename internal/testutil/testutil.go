@@ -104,7 +104,7 @@ func MakeValidateRequest(t *testing.T, server *handlers.Server, licenseKey, appV
 		t.Fatalf("Failed to marshal request: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/licenses/validate", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/v1/licenses/validate", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -168,11 +168,11 @@ func CreateStripeWebhookPayload(eventType string, sessionData map[string]interfa
 // CreateMockCheckoutSession creates a mock Stripe checkout session
 func CreateMockCheckoutSession(customerEmail, sessionID string, hasCustomer bool) map[string]interface{} {
 	session := map[string]interface{}{
-		"id":              sessionID,
-		"customer_email":  customerEmail,
-		"amount_total":    2999,
-		"currency":        "usd",
-		"payment_status":  "paid",
+		"id":             sessionID,
+		"customer_email": customerEmail,
+		"amount_total":   2999,
+		"currency":       "usd",
+		"payment_status": "paid",
 		"metadata": map[string]interface{}{
 			"product_id":      "prod_test123",
 			"license_version": "1.0.0",
@@ -190,7 +190,7 @@ func CreateMockCheckoutSession(customerEmail, sessionID string, hasCustomer bool
 
 // MakeStripeWebhookRequest creates and sends a Stripe webhook request
 func MakeStripeWebhookRequest(t *testing.T, server *handlers.Server, payload []byte) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/stripe", bytes.NewBuffer(payload))
+	req := httptest.NewRequest(http.MethodPost, "/v1/webhooks/stripe", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Stripe-Signature", "test-signature")
 
