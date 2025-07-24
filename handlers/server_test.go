@@ -54,7 +54,7 @@ func TestServer_HealthEndpoint(t *testing.T) {
 	db := &storage.MemoryStorage{Data: storage.Database{}}
 	server := NewHttpServer(db)
 
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequest(http.MethodGet, "/v1/health", nil)
 	w := httptest.NewRecorder()
 
 	server.Health(w, req)
@@ -199,7 +199,7 @@ func TestServer_RoutingConfiguration(t *testing.T) {
 // 	}
 
 // 	// Test that endpoints still work with empty database
-// 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+// 	req := httptest.NewRequest(http.MethodGet, "/v1/health", nil)
 // 	w := httptest.NewRecorder()
 
 // 	server.Health(w, req)
@@ -329,7 +329,7 @@ func TestServer_RoutingConfiguration(t *testing.T) {
 
 // 	server := NewHttpServer(db)
 
-// 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+// 	req := httptest.NewRequest(http.MethodGet, "/v1/health", nil)
 
 // 	b.ResetTimer()
 // 	for i := 0; i < b.N; i++ {
