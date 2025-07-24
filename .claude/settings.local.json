@@ -5,7 +5,8 @@
       "Bash(go test:*)",
       "Bash(grep:*)",
       "Bash(go tool cover:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(go vet:*)"
     ],
     "deny": []
   }
