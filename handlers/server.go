@@ -25,10 +25,10 @@ func NewHttpServer(db storage.Storage) *Server {
 		RateLimitter: ratelimit.New(10, time.Minute),
 	}
 
-	mux.Handle("/health", http.HandlerFunc(s.Health))
+	mux.Handle("/v1/health", http.HandlerFunc(s.Health))
 	// mux.Handle("/api/v1/licenses", http.HandlerFunc(db.list))
-	mux.Handle("/api/v1/licenses/validate", s.chain(s.withCORS, s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
-	mux.Handle("/api/v1/webhooks/stripe", s.chain(s.withCORS, s.withLogging, s.withRateLimit)(http.HandlerFunc(s.Stripe)))
+	mux.Handle("/v1/licenses/validate", s.chain(s.withCORS, s.withLogging, s.withRateLimit)(http.HandlerFunc(s.ValidateLicense)))
+	mux.Handle("/v1/webhooks/stripe", s.chain(s.withCORS, s.withLogging, s.withRateLimit)(http.HandlerFunc(s.Stripe)))
 
 	return s
 }
