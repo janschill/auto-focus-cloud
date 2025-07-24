@@ -94,13 +94,13 @@ func TestServer_RoutingConfiguration(t *testing.T) {
 		{
 			name:           "health endpoint - GET",
 			method:         http.MethodGet,
-			path:           "/health",
+			path:           "/v1/health",
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "health endpoint - POST should work too",
 			method:         http.MethodPost,
-			path:           "/health",
+			path:           "/v1/health",
 			expectedStatus: http.StatusOK,
 		},
 		{
