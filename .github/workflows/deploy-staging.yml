@@ -1,0 +1,166 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [ staging ]
+  workflow_dispatch:
+    inputs:
+      deploy_staging:
+        description: 'Force deploy to staging'
+        required: false
+        default: 'true'
+
+env:
+  GO_VERSION: '1.23.2'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+        
+    - name: Install dependencies
+      run: go mod download
+      
+    - name: Run tests
+      run: go test -v ./...
+      
+    - name: Build staging application
+      run: |
+        CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -ldflags="-w -s" -o auto-focus-cloud-staging main.go
+        
+    - name: Generate staging version
+      id: version
+      run: |
+        # Create staging version with timestamp
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        COMMIT_SHA=$(git rev-parse --short HEAD)
+        STAGING_VERSION="staging-${TIMESTAMP}-${COMMIT_SHA}"
+        echo "version=$STAGING_VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION=$STAGING_VERSION" >> $GITHUB_ENV
+        echo "Staging version: $STAGING_VERSION"
+        
+    - name: Create staging deployment package
+      run: |
+        mkdir -p deploy-staging
+        cp auto-focus-cloud-staging deploy-staging/auto-focus-cloud-staging
+        cp deploy-staging.sh deploy-staging/
+        cp auto-focus-cloud-staging.service deploy-staging/
+        echo "${{ env.VERSION }}" > deploy-staging/VERSION
+        tar -czf auto-focus-cloud-staging-${{ env.VERSION }}.tar.gz -C deploy-staging .
+        
+    - name: Upload staging deployment package
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        source: "auto-focus-cloud-staging-${{ env.VERSION }}.tar.gz"
+        target: "/tmp/"
+        
+    - name: Deploy to staging
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        script: |
+          # Create staging deployment directory
+          sudo mkdir -p /home/autofocus/staging
+          cd /home/autofocus/staging
+          
+          # Extract staging deployment package
+          sudo tar -xzf /tmp/auto-focus-cloud-staging-${{ env.VERSION }}.tar.gz
+          sudo chmod +x auto-focus-cloud-staging deploy-staging.sh
+          
+          # Set staging environment
+          export ENVIRONMENT=staging
+          
+          # Run staging deployment script
+          sudo ./deploy-staging.sh ${{ env.VERSION }}
+          
+          # Cleanup
+          rm /tmp/auto-focus-cloud-staging-${{ env.VERSION }}.tar.gz
+          
+    - name: Verify staging deployment
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        script: |
+          echo "🔍 Verifying staging deployment..."
+          
+          # Check if staging service is running
+          if systemctl is-active --quiet auto-focus-cloud-staging; then
+            echo "✅ Staging service is running"
+            
+            # Test staging API endpoint
+            sleep 5  # Wait for service to fully start
+            
+            if curl -f -s http://localhost:8081/v1/licenses/validate -X POST \
+                -H "Content-Type: application/json" \
+                -d '{"license_key":"test","app_version":"1.0"}' > /dev/null; then
+              echo "✅ Staging API is responding"
+              echo "🌐 Staging available at: https://staging.auto-focus.app/api/"
+            else
+              echo "⚠️  Staging API not responding yet (may need more time to start)"
+            fi
+            
+            # Show service status
+            systemctl status auto-focus-cloud-staging --no-pager -l
+          else
+            echo "❌ Staging service failed to start"
+            journalctl -u auto-focus-cloud-staging --no-pager -l --since "5 minutes ago"
+            exit 1
+          fi
+          
+    - name: Comment on PR (if applicable)
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 **Staging Deployed Successfully!**
+            
+            - **Version**: \`${{ env.VERSION }}\`
+            - **Environment**: Staging
+            - **API Endpoint**: https://staging.auto-focus.app/api/
+            - **Test Checkout**: https://auto-focus.app/?staging=1
+            
+            💳 **Test with Stripe test cards:**
+            - Success: \`4242424242424242\`
+            - Declined: \`4000000000000002\`
+            
+            🧪 This staging deployment will be available until the next deployment.`
+          })
