@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -89,16 +88,16 @@ func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
 
 func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 	timestamp := time.Now().Unix()
-	
+
 	response := ValidateResponse{
 		Valid:     valid,
 		Message:   message,
 		Timestamp: timestamp,
 	}
-	
+
 	// Generate HMAC signature
 	response.Signature = generateHMACSignature(valid, message, timestamp)
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		logger.Error("Failed to encode validation response", map[string]interface{}{
@@ -115,15 +114,15 @@ func generateHMACSignature(valid bool, message string, timestamp int64) string {
 		secret = "auto-focus-hmac-secret-2025"
 		logger.Warn("Using default HMAC secret", map[string]interface{}{})
 	}
-	
+
 	// Create payload: valid|message|timestamp
 	payload := fmt.Sprintf("%t|%s|%d", valid, message, timestamp)
-	
+
 	// Generate HMAC
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(payload))
 	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
-	
+
 	return signature
 }
 

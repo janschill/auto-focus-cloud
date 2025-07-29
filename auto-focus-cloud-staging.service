@@ -1,0 +1,28 @@
+[Unit]
+Description=Auto Focus Cloud API (Staging)
+After=network.target
+
+[Service]
+Type=simple
+User=autofocus
+WorkingDirectory=/home/autofocus/staging
+ExecStart=/home/autofocus/staging/auto-focus-cloud-staging
+Restart=always
+RestartSec=5
+Environment=ENVIRONMENT=staging
+Environment=PORT=8081
+EnvironmentFile=-/home/autofocus/staging/.env.staging
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=auto-focus-cloud-staging
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/autofocus/staging
+
+[Install]
+WantedBy=multi-user.target

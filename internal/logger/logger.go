@@ -134,7 +134,7 @@ func sanitizeFields(fields map[string]interface{}) map[string]interface{} {
 
 	for k, v := range fields {
 		keyLower := strings.ToLower(k)
-		
+
 		// Check if key contains sensitive terms
 		isSensitive := false
 		for _, sensitive := range sensitiveKeys {
