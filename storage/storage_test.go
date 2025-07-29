@@ -235,7 +235,7 @@ func TestFileStorage_NewFileStorage(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error for NewFileStorage with non-existent directory, got %v", err)
 	}
-	
+
 	// Note: SaveCustomer doesn't actually write to file yet (has TODO comment),
 	// so this test verifies current behavior rather than expected final behavior
 	if invalidStorage != nil {
@@ -588,7 +588,7 @@ func BenchmarkMemoryStorage_FindLicenseByKey(b *testing.B) {
 	// Setup
 	customer := createTestCustomer("bench", "bench@example.com")
 	_ = storage.SaveCustomer(ctx, &customer)
-	
+
 	license := createTestLicense("bench_license", "AFP-BENCH123", "bench")
 	_ = storage.SaveLicense(ctx, &license)
 

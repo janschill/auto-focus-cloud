@@ -52,17 +52,17 @@ func TestIsCompatible_SameMajorVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := IsCompatible(tt.licenseVersion, tt.requestedVersion)
-			
+
 			if tt.expectError && err == nil {
 				t.Error("Expected error but got none")
 			}
-			
+
 			if !tt.expectError && err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			
+
 			if result != tt.expected {
-				t.Errorf("IsCompatible(%q, %q) = %v, want %v", 
+				t.Errorf("IsCompatible(%q, %q) = %v, want %v",
 					tt.licenseVersion, tt.requestedVersion, result, tt.expected)
 			}
 		})
@@ -105,11 +105,11 @@ func TestIsCompatible_ErrorCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := IsCompatible(tt.licenseVersion, tt.requestedVersion)
-			
+
 			if tt.expectError && err == nil {
 				t.Error("Expected error but got none")
 			}
-			
+
 			if !tt.expectError && err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
@@ -134,11 +134,11 @@ func TestExtractMajorVersion_ValidVersions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ExtractMajorVersion(tt.version)
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			
+
 			if result != tt.expected {
 				t.Errorf("ExtractMajorVersion(%q) = %d, want %d", tt.version, result, tt.expected)
 			}
@@ -161,7 +161,7 @@ func TestExtractMajorVersion_InvalidVersions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ExtractMajorVersion(tt.version)
-			
+
 			if err == nil {
 				t.Errorf("Expected error for version %q, but got none", tt.version)
 			}
@@ -185,15 +185,15 @@ func TestExtractMajorVersion_EdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ExtractMajorVersion(tt.version)
-			
+
 			if tt.expectError && err == nil {
 				t.Error("Expected error but got none")
 			}
-			
+
 			if !tt.expectError && err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			
+
 			if !tt.expectError && result != tt.expected {
 				t.Errorf("ExtractMajorVersion(%q) = %d, want %d", tt.version, result, tt.expected)
 			}

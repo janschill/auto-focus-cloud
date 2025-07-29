@@ -17,7 +17,7 @@ func main() {
 	if env := os.Getenv("ENVIRONMENT"); env == "staging" {
 		envFile = ".env.staging"
 	}
-	
+
 	// Load the appropriate environment file
 	if err := godotenv.Load(envFile); err != nil {
 		log.Printf("Warning: Could not load %s file: %v", envFile, err)
@@ -61,7 +61,7 @@ func main() {
 	if environment == "" {
 		environment = "production"
 	}
-	
+
 	log.Printf("Starting Auto-Focus API server")
 	log.Printf("Environment: %s", environment)
 	log.Printf("Port: %s", port)

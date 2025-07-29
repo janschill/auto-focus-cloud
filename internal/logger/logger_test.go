@@ -17,14 +17,14 @@ func extractJSONFromLogOutput(output string) (map[string]interface{}, error) {
 	if len(lines) == 0 {
 		return nil, fmt.Errorf("no log output")
 	}
-	
+
 	line := lines[len(lines)-1]
 	jsonStart := strings.Index(line, "{")
 	if jsonStart == -1 {
 		return nil, fmt.Errorf("no JSON found in log output: %s", line)
 	}
 	jsonPart := line[jsonStart:]
-	
+
 	err := json.Unmarshal([]byte(jsonPart), &logEntry)
 	return logEntry, err
 }
@@ -139,7 +139,7 @@ func TestError(t *testing.T) {
 	defer log.SetOutput(os.Stderr)
 
 	fields := map[string]interface{}{
-		"error":      "database connection failed",
+		"error":       "database connection failed",
 		"retry_count": 3,
 	}
 

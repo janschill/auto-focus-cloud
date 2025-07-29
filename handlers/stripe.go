@@ -176,11 +176,11 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 
 	if err := email.Send(session.CustomerEmail, "Auto-Focus+ License Key", body); err != nil {
 		logger.Error("Failed to send license email", map[string]interface{}{
-			"error":        err.Error(),
-			"email":        session.CustomerEmail,
-			"license_key":  license.Key,
-			"customer_id":  customer.ID,
-			"session_id":   session.ID,
+			"error":       err.Error(),
+			"email":       session.CustomerEmail,
+			"license_key": license.Key,
+			"customer_id": customer.ID,
+			"session_id":  session.ID,
 		})
 		// Don't return error - license was created successfully
 		// Email failure shouldn't fail the entire transaction

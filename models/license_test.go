@@ -18,7 +18,7 @@ func TestLicenseStatus_Constants(t *testing.T) {
 
 func TestLicense_Creation(t *testing.T) {
 	now := time.Now()
-	
+
 	license := License{
 		ID:              "test-license-1",
 		Key:             "AFP-TEST123",
@@ -166,19 +166,19 @@ func TestLicense_KeyFormats(t *testing.T) {
 		"AFP",
 		"12345678",
 		"INVALID-KEY",
-		"AFP-123",      // too short
+		"AFP-123",       // too short
 		"AFP-123456789", // too long
 	}
 
 	for _, key := range validKeys {
 		t.Run("valid_"+key, func(t *testing.T) {
 			license := License{Key: key}
-			
+
 			// Basic format check: starts with "AFP-" and has reasonable length
 			if len(license.Key) != 12 {
 				t.Errorf("Expected key length 12, got %d for key '%s'", len(license.Key), key)
 			}
-			
+
 			if license.Key[:4] != "AFP-" {
 				t.Errorf("Expected key to start with 'AFP-', got '%s'", key)
 			}
@@ -188,7 +188,7 @@ func TestLicense_KeyFormats(t *testing.T) {
 	for _, key := range invalidKeys {
 		t.Run("invalid_"+key, func(t *testing.T) {
 			license := License{Key: key}
-			
+
 			// These should not pass our basic format validation
 			isValidFormat := len(license.Key) == 12 && license.Key[:4] == "AFP-"
 			if isValidFormat && key != "" {
@@ -219,7 +219,7 @@ func TestLicense_VersionFormats(t *testing.T) {
 	for _, version := range validVersions {
 		t.Run("valid_"+version, func(t *testing.T) {
 			license := License{Version: version}
-			
+
 			// Basic semantic version check (simplified)
 			if license.Version == "" {
 				t.Errorf("Version should not be empty")
@@ -230,7 +230,7 @@ func TestLicense_VersionFormats(t *testing.T) {
 	for _, version := range invalidVersions {
 		t.Run("invalid_"+version, func(t *testing.T) {
 			license := License{Version: version}
-			
+
 			// We don't enforce strict version validation in the model
 			// This is handled by the version package
 			_ = license // Just ensure the struct accepts any string
@@ -240,7 +240,7 @@ func TestLicense_VersionFormats(t *testing.T) {
 
 func TestCustomer_Creation(t *testing.T) {
 	now := time.Now()
-	
+
 	customer := Customer{
 		ID:               "customer-1",
 		Email:            "test@example.com",
@@ -315,7 +315,7 @@ func TestCustomer_EmailFormats(t *testing.T) {
 	for _, email := range validEmails {
 		t.Run("valid_"+email, func(t *testing.T) {
 			customer := Customer{Email: email}
-			
+
 			// Basic email check: contains @ symbol
 			if customer.Email == "" {
 				t.Errorf("Email should not be empty")
@@ -326,7 +326,7 @@ func TestCustomer_EmailFormats(t *testing.T) {
 	for _, email := range invalidEmails {
 		t.Run("invalid_"+email, func(t *testing.T) {
 			customer := Customer{Email: email}
-			
+
 			// We don't enforce strict email validation in the model
 			// This would be handled by validation layer
 			_ = customer // Just ensure the struct accepts any string
@@ -336,7 +336,7 @@ func TestCustomer_EmailFormats(t *testing.T) {
 
 func TestModels_TimeFields(t *testing.T) {
 	now := time.Now()
-	
+
 	// Test License time fields
 	license := License{
 		CreatedAt: now,
@@ -347,7 +347,7 @@ func TestModels_TimeFields(t *testing.T) {
 		t.Errorf("CreatedAt should not be after UpdatedAt")
 	}
 
-	// Test Customer time fields  
+	// Test Customer time fields
 	customer := Customer{
 		CreatedAt: now,
 		UpdatedAt: now.Add(time.Hour),
@@ -389,7 +389,7 @@ func TestModels_IDGeneration(t *testing.T) {
 // Test model relationships
 func TestModels_Relationships(t *testing.T) {
 	customerID := "relationship-customer"
-	
+
 	customer := Customer{
 		ID:    customerID,
 		Email: "relationship@example.com",
@@ -425,7 +425,7 @@ func TestModels_Relationships(t *testing.T) {
 // Benchmark tests for model operations
 func BenchmarkLicense_Creation(b *testing.B) {
 	now := time.Now()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = License{
@@ -444,7 +444,7 @@ func BenchmarkLicense_Creation(b *testing.B) {
 
 func BenchmarkCustomer_Creation(b *testing.B) {
 	now := time.Now()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = Customer{
