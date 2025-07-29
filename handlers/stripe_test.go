@@ -269,7 +269,7 @@ func TestCreateCustomer_WithStripeCustomer(t *testing.T) {
 		Customer:      &stripe.Customer{ID: "cus_stripe123"},
 	}
 
-	customer := createCustomer(session)
+	customer := createCustomer(session, "customer@example.com")
 
 	if customer.Email != "customer@example.com" {
 		t.Errorf("Expected email 'customer@example.com', got '%s'", customer.Email)
@@ -291,7 +291,7 @@ func TestCreateCustomer_WithoutStripeCustomer(t *testing.T) {
 		Customer:      nil,
 	}
 
-	customer := createCustomer(session)
+	customer := createCustomer(session, "nocustomer@example.com")
 
 	if customer.Email != "nocustomer@example.com" {
 		t.Errorf("Expected email 'nocustomer@example.com', got '%s'", customer.Email)
@@ -385,7 +385,7 @@ func TestFindOrCreateCustomer_DatabaseError(t *testing.T) {
 		CustomerEmail: "error@example.com",
 	}
 
-	_, err := server.findOrCreateCustomer(context.Background(), session)
+	_, err := server.findOrCreateCustomer(context.Background(), session, "error@example.com")
 	if err == nil {
 		t.Errorf("Expected error from database, got nil")
 	}
@@ -405,7 +405,7 @@ func TestCreateLicensedUser_SaveLicenseError(t *testing.T) {
 		},
 	}
 
-	_, _, err := server.createLicensedUser(context.Background(), session)
+	_, _, err := server.createLicensedUser(context.Background(), session, "save@example.com")
 	if err == nil {
 		t.Errorf("Expected error from license save, got nil")
 	}
