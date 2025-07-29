@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"auto-focus.app/cloud/internal/email"
@@ -179,8 +180,41 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 		"session_id":     session.ID,
 	})
 
-	body := fmt.Sprintf("Hello! Thank you for purchasing a license!\r\n"+
-		"Your License Key is: %s\r\n", license.Key)
+	// Create personalized email content
+	customerName := "there"
+	if customer.Name != "" {
+		customerName = strings.Split(customer.Name, " ")[0] // Use first name only
+	}
+
+	formattedPrice := formatPrice(license.PricePaid, license.Currency)
+
+	body := fmt.Sprintf(`Hello %s,
+
+Thank you for purchasing Auto-Focus+! Your purchase has been processed successfully.
+
+LICENSE DETAILS
+License Key: %s
+Product: Auto-Focus+ (%s)
+Amount Paid: %s
+
+GETTING STARTED
+1. Open Auto-Focus on your Mac
+2. Go to Settings → License
+3. Enter your license key: %s
+4. Enjoy unlimited focus sessions!
+
+NEED HELP?
+If you have any questions, reply to this email or contact us at help@auto-focus.app
+
+Thank you for choosing Auto-Focus+!
+
+Best regards,
+The Auto-Focus Team`, 
+		customerName, 
+		license.Key, 
+		license.ProductName,
+		formattedPrice,
+		license.Key)
 
 	if err := email.Send(customerEmail, "Auto-Focus+ License Key", body); err != nil {
 		logger.Error("Failed to send license email", map[string]interface{}{
@@ -311,9 +345,20 @@ func createCustomer(session *stripe.CheckoutSession, customerEmail string) *mode
 		})
 	}
 
+	// Extract customer name and country from CustomerDetails
+	var customerName, country string
+	if session.CustomerDetails != nil {
+		customerName = session.CustomerDetails.Name
+		if session.CustomerDetails.Address != nil {
+			country = session.CustomerDetails.Address.Country
+		}
+	}
+
 	customer := &models.Customer{
 		ID:               uuid.Must(uuid.NewRandom()).String(),
 		Email:            customerEmail,
+		Name:             customerName,
+		Country:          country,
 		StripeCustomerID: stripeCustomerID,
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
@@ -328,11 +373,20 @@ func createCustomer(session *stripe.CheckoutSession, customerEmail string) *mode
 }
 
 func createLicese(customer *models.Customer, session *stripe.CheckoutSession) *models.License {
+	// Default product name to "v1" if not specified in metadata
+	productName := session.Metadata["product_name"]
+	if productName == "" {
+		productName = "v1"
+	}
+
 	return &models.License{
 		ID:              uuid.Must(uuid.NewRandom()).String(),
 		Key:             generateLicenseKey(),
 		CustomerID:      customer.ID,
 		ProductID:       session.Metadata["product_id"],
+		ProductName:     productName,
+		PricePaid:       session.AmountTotal,
+		Currency:        string(session.Currency),
 		Version:         session.Metadata["license_version"],
 		Status:          models.StatusActive,
 		StripeSessionID: session.ID,
@@ -343,4 +397,27 @@ func createLicese(customer *models.Customer, session *stripe.CheckoutSession) *m
 
 func generateLicenseKey() string {
 	return fmt.Sprintf("AFP-%s", uuid.Must(uuid.NewRandom()).String()[:8])
+}
+
+func formatPrice(amountCents int64, currency string) string {
+	// Convert cents to major currency unit
+	amount := float64(amountCents) / 100.0
+	
+	// Format based on currency
+	switch strings.ToUpper(currency) {
+	case "USD":
+		return fmt.Sprintf("$%.2f", amount)
+	case "EUR":
+		return fmt.Sprintf("€%.2f", amount)
+	case "GBP":
+		return fmt.Sprintf("£%.2f", amount)
+	case "NOK":
+		return fmt.Sprintf("%.2f NOK", amount)
+	case "SEK":
+		return fmt.Sprintf("%.2f SEK", amount)
+	case "DKK":
+		return fmt.Sprintf("%.2f DKK", amount)
+	default:
+		return fmt.Sprintf("%.2f %s", amount, strings.ToUpper(currency))
+	}
 }

@@ -270,6 +270,8 @@ func (s *SQLiteStorage) migrate(ctx context.Context) error {
       CREATE TABLE IF NOT EXISTS customers (
           id TEXT PRIMARY KEY,
           email TEXT UNIQUE NOT NULL,
+          name TEXT,
+          country TEXT,
           stripe_customer_id TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -280,6 +282,9 @@ func (s *SQLiteStorage) migrate(ctx context.Context) error {
           key TEXT UNIQUE NOT NULL,
           customer_id TEXT NOT NULL,
           product_id TEXT NOT NULL,
+          product_name TEXT,
+          price_paid INTEGER,
+          currency TEXT,
           version TEXT NOT NULL,
           status TEXT NOT NULL,
           stripe_session_id TEXT NOT NULL,
@@ -294,12 +299,14 @@ func (s *SQLiteStorage) migrate(ctx context.Context) error {
 }
 
 func (s *SQLiteStorage) GetCustomer(ctx context.Context, id string) (*models.Customer, error) {
-	query := `SELECT id, email, stripe_customer_id, created_at, updated_at FROM customers WHERE id = ?`
+	query := `SELECT id, email, name, country, stripe_customer_id, created_at, updated_at FROM customers WHERE id = ?`
 
 	var customer models.Customer
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&customer.ID,
 		&customer.Email,
+		&customer.Name,
+		&customer.Country,
 		&customer.StripeCustomerID,
 		&customer.CreatedAt,
 		&customer.UpdatedAt,
@@ -316,12 +323,14 @@ func (s *SQLiteStorage) GetCustomer(ctx context.Context, id string) (*models.Cus
 }
 
 func (s *SQLiteStorage) FindCustomerByEmailAddress(ctx context.Context, emailAddress string) (*models.Customer, error) {
-	query := `SELECT id, email, stripe_customer_id, created_at, updated_at FROM customers WHERE email = ?`
+	query := `SELECT id, email, name, country, stripe_customer_id, created_at, updated_at FROM customers WHERE email = ?`
 
 	var customer models.Customer
 	err := s.db.QueryRowContext(ctx, query, emailAddress).Scan(
 		&customer.ID,
 		&customer.Email,
+		&customer.Name,
+		&customer.Country,
 		&customer.StripeCustomerID,
 		&customer.CreatedAt,
 		&customer.UpdatedAt,
@@ -338,11 +347,13 @@ func (s *SQLiteStorage) FindCustomerByEmailAddress(ctx context.Context, emailAdd
 }
 
 func (s *SQLiteStorage) SaveCustomer(ctx context.Context, customer *models.Customer) error {
-	query := `INSERT OR REPLACE INTO customers (id, email, stripe_customer_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
+	query := `INSERT OR REPLACE INTO customers (id, email, name, country, stripe_customer_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := s.db.ExecContext(ctx, query,
 		customer.ID,
 		customer.Email,
+		customer.Name,
+		customer.Country,
 		customer.StripeCustomerID,
 		customer.CreatedAt,
 		customer.UpdatedAt,
@@ -356,7 +367,7 @@ func (s *SQLiteStorage) SaveCustomer(ctx context.Context, customer *models.Custo
 }
 
 func (s *SQLiteStorage) GetLicense(ctx context.Context, id string) (*models.License, error) {
-	query := `SELECT id, key, customer_id, product_id, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE id = ?`
+	query := `SELECT id, key, customer_id, product_id, product_name, price_paid, currency, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE id = ?`
 
 	var license models.License
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -364,6 +375,9 @@ func (s *SQLiteStorage) GetLicense(ctx context.Context, id string) (*models.Lice
 		&license.Key,
 		&license.CustomerID,
 		&license.ProductID,
+		&license.ProductName,
+		&license.PricePaid,
+		&license.Currency,
 		&license.Version,
 		&license.Status,
 		&license.StripeSessionID,
@@ -382,7 +396,7 @@ func (s *SQLiteStorage) GetLicense(ctx context.Context, id string) (*models.Lice
 }
 
 func (s *SQLiteStorage) FindLicenseByKey(ctx context.Context, key string) (*models.License, error) {
-	query := `SELECT id, key, customer_id, product_id, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE key = ?`
+	query := `SELECT id, key, customer_id, product_id, product_name, price_paid, currency, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE key = ?`
 
 	var license models.License
 	err := s.db.QueryRowContext(ctx, query, key).Scan(
@@ -390,6 +404,9 @@ func (s *SQLiteStorage) FindLicenseByKey(ctx context.Context, key string) (*mode
 		&license.Key,
 		&license.CustomerID,
 		&license.ProductID,
+		&license.ProductName,
+		&license.PricePaid,
+		&license.Currency,
 		&license.Version,
 		&license.Status,
 		&license.StripeSessionID,
@@ -408,7 +425,7 @@ func (s *SQLiteStorage) FindLicenseByKey(ctx context.Context, key string) (*mode
 }
 
 func (s *SQLiteStorage) FindLicensesByCustomer(ctx context.Context, customerID string) ([]*models.License, error) {
-	query := `SELECT id, key, customer_id, product_id, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE customer_id = ?`
+	query := `SELECT id, key, customer_id, product_id, product_name, price_paid, currency, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE customer_id = ?`
 
 	rows, err := s.db.QueryContext(ctx, query, customerID)
 	if err != nil {
@@ -429,6 +446,9 @@ func (s *SQLiteStorage) FindLicensesByCustomer(ctx context.Context, customerID s
 			&license.Key,
 			&license.CustomerID,
 			&license.ProductID,
+			&license.ProductName,
+			&license.PricePaid,
+			&license.Currency,
 			&license.Version,
 			&license.Status,
 			&license.StripeSessionID,
@@ -451,7 +471,7 @@ func (s *SQLiteStorage) FindLicensesByCustomer(ctx context.Context, customerID s
 }
 
 func (s *SQLiteStorage) SaveLicense(ctx context.Context, license *models.License) error {
-	query := `INSERT OR REPLACE INTO licenses (id, key, version, status, customer_id, product_id, stripe_session_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT OR REPLACE INTO licenses (id, key, version, status, customer_id, product_id, product_name, price_paid, currency, stripe_session_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := s.db.ExecContext(ctx, query,
 		license.ID,
@@ -460,6 +480,9 @@ func (s *SQLiteStorage) SaveLicense(ctx context.Context, license *models.License
 		license.Status,
 		license.CustomerID,
 		license.ProductID,
+		license.ProductName,
+		license.PricePaid,
+		license.Currency,
 		license.StripeSessionID,
 		license.CreatedAt,
 		license.UpdatedAt,
