@@ -133,9 +133,17 @@ func (s *Server) Stripe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.CheckoutSession) error {
+	// Extract customer email from CustomerDetails if available
+	var customerEmail string
+	if session.CustomerDetails != nil {
+		customerEmail = session.CustomerDetails.Email
+	} else {
+		customerEmail = session.CustomerEmail
+	}
+
 	fields := map[string]interface{}{
 		"session_id":     session.ID,
-		"customer_email": session.CustomerEmail,
+		"customer_email": customerEmail,
 		"amount":         session.AmountTotal,
 		"currency":       session.Currency,
 		"payment_status": session.PaymentStatus,
@@ -156,7 +164,7 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 		})
 	}
 
-	customer, license, err := s.createLicensedUser(ctx, session)
+	customer, license, err := s.createLicensedUser(ctx, session, customerEmail)
 	if err != nil {
 		logger.Error("Failed to create licensed user", map[string]interface{}{
 			"error":      err.Error(),
@@ -174,10 +182,10 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 	body := fmt.Sprintf("Hello! Thank you for purchasing a license!\r\n"+
 		"Your License Key is: %s\r\n", license.Key)
 
-	if err := email.Send(session.CustomerEmail, "Auto-Focus+ License Key", body); err != nil {
+	if err := email.Send(customerEmail, "Auto-Focus+ License Key", body); err != nil {
 		logger.Error("Failed to send license email", map[string]interface{}{
 			"error":       err.Error(),
-			"email":       session.CustomerEmail,
+			"email":       customerEmail,
 			"license_key": license.Key,
 			"customer_id": customer.ID,
 			"session_id":  session.ID,
@@ -186,7 +194,7 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 		// Email failure shouldn't fail the entire transaction
 	} else {
 		logger.Info("License email sent successfully", map[string]interface{}{
-			"email":       session.CustomerEmail,
+			"email":       customerEmail,
 			"customer_id": customer.ID,
 		})
 	}
@@ -194,12 +202,12 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 	return nil
 }
 
-func (s *Server) createLicensedUser(ctx context.Context, session *stripe.CheckoutSession) (*models.Customer, *models.License, error) {
+func (s *Server) createLicensedUser(ctx context.Context, session *stripe.CheckoutSession, customerEmail string) (*models.Customer, *models.License, error) {
 	logger.Debug("Creating licensed user", map[string]interface{}{
 		"session_id": session.ID,
 	})
 
-	customer, err := s.findOrCreateCustomer(ctx, session)
+	customer, err := s.findOrCreateCustomer(ctx, session, customerEmail)
 	if err != nil {
 		logger.Error("Failed to find/create customer", map[string]interface{}{
 			"error":      err.Error(),
@@ -241,17 +249,17 @@ func (s *Server) createLicensedUser(ctx context.Context, session *stripe.Checkou
 	return customer, license, nil
 }
 
-func (s *Server) findOrCreateCustomer(ctx context.Context, session *stripe.CheckoutSession) (*models.Customer, error) {
+func (s *Server) findOrCreateCustomer(ctx context.Context, session *stripe.CheckoutSession, customerEmail string) (*models.Customer, error) {
 	logger.Debug("Looking up customer", map[string]interface{}{
-		"customer_email": session.CustomerEmail,
+		"customer_email": customerEmail,
 		"session_id":     session.ID,
 	})
 
-	customer, err := s.Storage.FindCustomerByEmailAddress(ctx, session.CustomerEmail)
+	customer, err := s.Storage.FindCustomerByEmailAddress(ctx, customerEmail)
 	if err != nil {
 		logger.Error("Database lookup failed", map[string]interface{}{
 			"error":          err.Error(),
-			"customer_email": session.CustomerEmail,
+			"customer_email": customerEmail,
 		})
 		return nil, err
 	}
@@ -265,11 +273,11 @@ func (s *Server) findOrCreateCustomer(ctx context.Context, session *stripe.Check
 	}
 
 	logger.Info("Creating new customer", map[string]interface{}{
-		"customer_email": session.CustomerEmail,
+		"customer_email": customerEmail,
 		"session_id":     session.ID,
 	})
 
-	customer = createCustomer(session)
+	customer = createCustomer(session, customerEmail)
 
 	err = s.Storage.SaveCustomer(ctx, customer)
 	if err != nil {
@@ -289,7 +297,7 @@ func (s *Server) findOrCreateCustomer(ctx context.Context, session *stripe.Check
 	return customer, nil
 }
 
-func createCustomer(session *stripe.CheckoutSession) *models.Customer {
+func createCustomer(session *stripe.CheckoutSession, customerEmail string) *models.Customer {
 	var stripeCustomerID string
 	if session.Customer != nil {
 		stripeCustomerID = session.Customer.ID
@@ -305,7 +313,7 @@ func createCustomer(session *stripe.CheckoutSession) *models.Customer {
 
 	customer := &models.Customer{
 		ID:               uuid.Must(uuid.NewRandom()).String(),
-		Email:            session.CustomerEmail,
+		Email:            customerEmail,
 		StripeCustomerID: stripeCustomerID,
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
