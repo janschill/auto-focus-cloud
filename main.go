@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	_ = godotenv.Load()
+	godotenv.Load()
 
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              os.Getenv("SENTRY_DSN"),
