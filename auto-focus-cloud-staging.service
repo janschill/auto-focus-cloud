@@ -5,13 +5,13 @@ After=network.target
 [Service]
 Type=simple
 User=autofocus
-Group=autofocus
 WorkingDirectory=/home/autofocus/staging
 ExecStart=/home/autofocus/staging/auto-focus-cloud-staging
 Restart=always
 RestartSec=5
 Environment=ENVIRONMENT=staging
 Environment=PORT=8081
+EnvironmentFile=-/home/autofocus/staging/.env.staging
 
 # Logging
 StandardOutput=journal
@@ -22,7 +22,6 @@ SyslogIdentifier=auto-focus-cloud-staging
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
 ReadWritePaths=/home/autofocus/staging
 
 [Install]
