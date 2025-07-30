@@ -302,15 +302,22 @@ func (s *SQLiteStorage) GetCustomer(ctx context.Context, id string) (*models.Cus
 	query := `SELECT id, email, name, country, stripe_customer_id, created_at, updated_at FROM customers WHERE id = ?`
 
 	var customer models.Customer
+	var name, country, stripeCustomerID sql.NullString
+	
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&customer.ID,
 		&customer.Email,
-		&customer.Name,
-		&customer.Country,
-		&customer.StripeCustomerID,
+		&name,
+		&country,
+		&stripeCustomerID,
 		&customer.CreatedAt,
 		&customer.UpdatedAt,
 	)
+	
+	// Handle nullable fields
+	customer.Name = name.String
+	customer.Country = country.String
+	customer.StripeCustomerID = stripeCustomerID.String
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -326,15 +333,22 @@ func (s *SQLiteStorage) FindCustomerByEmailAddress(ctx context.Context, emailAdd
 	query := `SELECT id, email, name, country, stripe_customer_id, created_at, updated_at FROM customers WHERE email = ?`
 
 	var customer models.Customer
+	var name, country, stripeCustomerID sql.NullString
+	
 	err := s.db.QueryRowContext(ctx, query, emailAddress).Scan(
 		&customer.ID,
 		&customer.Email,
-		&customer.Name,
-		&customer.Country,
-		&customer.StripeCustomerID,
+		&name,
+		&country,
+		&stripeCustomerID,
 		&customer.CreatedAt,
 		&customer.UpdatedAt,
 	)
+	
+	// Handle nullable fields
+	customer.Name = name.String
+	customer.Country = country.String
+	customer.StripeCustomerID = stripeCustomerID.String
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -370,20 +384,28 @@ func (s *SQLiteStorage) GetLicense(ctx context.Context, id string) (*models.Lice
 	query := `SELECT id, key, customer_id, product_id, product_name, price_paid, currency, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE id = ?`
 
 	var license models.License
+	var productName, currency sql.NullString
+	var pricePaid sql.NullInt64
+	
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&license.ID,
 		&license.Key,
 		&license.CustomerID,
 		&license.ProductID,
-		&license.ProductName,
-		&license.PricePaid,
-		&license.Currency,
+		&productName,
+		&pricePaid,
+		&currency,
 		&license.Version,
 		&license.Status,
 		&license.StripeSessionID,
 		&license.CreatedAt,
 		&license.UpdatedAt,
 	)
+	
+	// Handle nullable fields
+	license.ProductName = productName.String
+	license.Currency = currency.String
+	license.PricePaid = pricePaid.Int64
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -399,20 +421,28 @@ func (s *SQLiteStorage) FindLicenseByKey(ctx context.Context, key string) (*mode
 	query := `SELECT id, key, customer_id, product_id, product_name, price_paid, currency, version, status, stripe_session_id, created_at, updated_at FROM licenses WHERE key = ?`
 
 	var license models.License
+	var productName, currency sql.NullString
+	var pricePaid sql.NullInt64
+	
 	err := s.db.QueryRowContext(ctx, query, key).Scan(
 		&license.ID,
 		&license.Key,
 		&license.CustomerID,
 		&license.ProductID,
-		&license.ProductName,
-		&license.PricePaid,
-		&license.Currency,
+		&productName,
+		&pricePaid,
+		&currency,
 		&license.Version,
 		&license.Status,
 		&license.StripeSessionID,
 		&license.CreatedAt,
 		&license.UpdatedAt,
 	)
+	
+	// Handle nullable fields
+	license.ProductName = productName.String
+	license.Currency = currency.String
+	license.PricePaid = pricePaid.Int64
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -441,20 +471,28 @@ func (s *SQLiteStorage) FindLicensesByCustomer(ctx context.Context, customerID s
 
 	for rows.Next() {
 		var license models.License
+		var productName, currency sql.NullString
+		var pricePaid sql.NullInt64
+		
 		err := rows.Scan(
 			&license.ID,
 			&license.Key,
 			&license.CustomerID,
 			&license.ProductID,
-			&license.ProductName,
-			&license.PricePaid,
-			&license.Currency,
+			&productName,
+			&pricePaid,
+			&currency,
 			&license.Version,
 			&license.Status,
 			&license.StripeSessionID,
 			&license.CreatedAt,
 			&license.UpdatedAt,
 		)
+		
+		// Handle nullable fields
+		license.ProductName = productName.String
+		license.Currency = currency.String
+		license.PricePaid = pricePaid.Int64
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan license: %w", err)
