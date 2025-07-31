@@ -10,6 +10,20 @@ import (
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	// Set log level to DEBUG for all logger tests
+	originalLevel := defaultLogger.level
+	SetLevel(DEBUG)
+	
+	// Run tests
+	result := m.Run()
+	
+	// Restore original level
+	SetLevel(originalLevel)
+	
+	os.Exit(result)
+}
+
 // Helper function to extract JSON from log output that includes Go log prefix
 func extractJSONFromLogOutput(output string) (map[string]interface{}, error) {
 	var logEntry map[string]interface{}

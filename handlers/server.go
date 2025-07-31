@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -45,7 +44,7 @@ type HealthResponse struct {
 
 func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	
+
 	logger.Debug("Health check requested", map[string]interface{}{
 		"remote_addr": r.RemoteAddr,
 	})

@@ -16,7 +16,7 @@ type License struct {
 	CustomerID      string
 	ProductID       string
 	ProductName     string
-	PricePaid       int64  // Price in cents
+	PricePaid       int64 // Price in cents
 	Currency        string
 	StripeSessionID string
 	CreatedAt       time.Time

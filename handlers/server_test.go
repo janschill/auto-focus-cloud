@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -74,10 +75,25 @@ func TestServer_HealthEndpoint(t *testing.T) {
 		t.Errorf("Expected non-empty response body")
 	}
 
-	// Should contain JSON with status field
-	expectedContent := `{"status":"ok"}`
-	if body != expectedContent+"\n" { // json.Encoder adds newline
-		t.Errorf("Expected response '%s', got '%s'", expectedContent, body)
+	// Should contain JSON with status field and other health check fields
+	// Parse the response to verify it contains the expected fields
+	var healthResponse map[string]interface{}
+	if err := json.Unmarshal([]byte(body), &healthResponse); err != nil {
+		t.Fatalf("Failed to parse health response: %v", err)
+	}
+	
+	// Check required fields
+	if status, ok := healthResponse["status"].(string); !ok || status != "ok" {
+		t.Errorf("Expected status 'ok', got %v", healthResponse["status"])
+	}
+	if _, ok := healthResponse["timestamp"].(string); !ok {
+		t.Errorf("Expected timestamp field in response")
+	}
+	if _, ok := healthResponse["environment"].(string); !ok {
+		t.Errorf("Expected environment field in response")
+	}
+	if database, ok := healthResponse["database"].(string); !ok || database != "ok" {
+		t.Errorf("Expected database 'ok', got %v", healthResponse["database"])
 	}
 }
 

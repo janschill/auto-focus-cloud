@@ -303,7 +303,7 @@ func (s *SQLiteStorage) GetCustomer(ctx context.Context, id string) (*models.Cus
 
 	var customer models.Customer
 	var name, country, stripeCustomerID sql.NullString
-	
+
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&customer.ID,
 		&customer.Email,
@@ -313,7 +313,7 @@ func (s *SQLiteStorage) GetCustomer(ctx context.Context, id string) (*models.Cus
 		&customer.CreatedAt,
 		&customer.UpdatedAt,
 	)
-	
+
 	// Handle nullable fields
 	customer.Name = name.String
 	customer.Country = country.String
@@ -334,7 +334,7 @@ func (s *SQLiteStorage) FindCustomerByEmailAddress(ctx context.Context, emailAdd
 
 	var customer models.Customer
 	var name, country, stripeCustomerID sql.NullString
-	
+
 	err := s.db.QueryRowContext(ctx, query, emailAddress).Scan(
 		&customer.ID,
 		&customer.Email,
@@ -344,7 +344,7 @@ func (s *SQLiteStorage) FindCustomerByEmailAddress(ctx context.Context, emailAdd
 		&customer.CreatedAt,
 		&customer.UpdatedAt,
 	)
-	
+
 	// Handle nullable fields
 	customer.Name = name.String
 	customer.Country = country.String
@@ -386,7 +386,7 @@ func (s *SQLiteStorage) GetLicense(ctx context.Context, id string) (*models.Lice
 	var license models.License
 	var productName, currency sql.NullString
 	var pricePaid sql.NullInt64
-	
+
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&license.ID,
 		&license.Key,
@@ -401,7 +401,7 @@ func (s *SQLiteStorage) GetLicense(ctx context.Context, id string) (*models.Lice
 		&license.CreatedAt,
 		&license.UpdatedAt,
 	)
-	
+
 	// Handle nullable fields
 	license.ProductName = productName.String
 	license.Currency = currency.String
@@ -423,7 +423,7 @@ func (s *SQLiteStorage) FindLicenseByKey(ctx context.Context, key string) (*mode
 	var license models.License
 	var productName, currency sql.NullString
 	var pricePaid sql.NullInt64
-	
+
 	err := s.db.QueryRowContext(ctx, query, key).Scan(
 		&license.ID,
 		&license.Key,
@@ -438,7 +438,7 @@ func (s *SQLiteStorage) FindLicenseByKey(ctx context.Context, key string) (*mode
 		&license.CreatedAt,
 		&license.UpdatedAt,
 	)
-	
+
 	// Handle nullable fields
 	license.ProductName = productName.String
 	license.Currency = currency.String
@@ -473,7 +473,7 @@ func (s *SQLiteStorage) FindLicensesByCustomer(ctx context.Context, customerID s
 		var license models.License
 		var productName, currency sql.NullString
 		var pricePaid sql.NullInt64
-		
+
 		err := rows.Scan(
 			&license.ID,
 			&license.Key,
@@ -488,7 +488,7 @@ func (s *SQLiteStorage) FindLicensesByCustomer(ctx context.Context, customerID s
 			&license.CreatedAt,
 			&license.UpdatedAt,
 		)
-		
+
 		// Handle nullable fields
 		license.ProductName = productName.String
 		license.Currency = currency.String

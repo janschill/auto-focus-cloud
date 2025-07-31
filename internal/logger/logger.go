@@ -166,6 +166,12 @@ func sanitizeFields(fields map[string]interface{}) map[string]interface{} {
 
 // Initialize logger based on environment
 func init() {
+	// During tests, reduce log noise by setting higher log level
+	if os.Getenv("GO_ENV") == "test" || strings.Contains(os.Args[0], ".test") {
+		SetLevel(WARN) // Only show WARN and ERROR during tests
+		return
+	}
+	
 	logLevel := os.Getenv("LOG_LEVEL")
 	switch strings.ToUpper(logLevel) {
 	case "DEBUG":

@@ -218,9 +218,9 @@ If you have any questions, reply to this email or contact us at help@auto-focus.
 Thank you for choosing Auto-Focus+!
 
 Best regards,
-The Auto-Focus Team`, 
-		customerName, 
-		license.Key, 
+The Auto-Focus Team`,
+		customerName,
+		license.Key,
 		license.ProductName,
 		formattedPrice,
 		license.Key)
@@ -411,7 +411,7 @@ func generateLicenseKey() string {
 func formatPrice(amountCents int64, currency string) string {
 	// Convert cents to major currency unit
 	amount := float64(amountCents) / 100.0
-	
+
 	// Format based on currency
 	switch strings.ToUpper(currency) {
 	case "USD":
@@ -446,7 +446,7 @@ func (s *Server) sendAdminSignupNotification(ctx context.Context, customer *mode
 	}
 
 	formattedPrice := formatPrice(license.PricePaid, license.Currency)
-	
+
 	subject := "🎉 New Auto-Focus+ Purchase"
 	body := fmt.Sprintf(`New customer signup alert!
 
@@ -466,7 +466,7 @@ TIMING
 Purchased: %s
 
 ---
-Sent from Auto-Focus Cloud API`, 
+Sent from Auto-Focus Cloud API`,
 		customerName,
 		customer.Email,
 		customer.Country,
@@ -484,10 +484,10 @@ Sent from Auto-Focus Cloud API`,
 	if err != nil {
 		sentry.CaptureException(err)
 		logger.Error("Failed to send admin signup notification", map[string]interface{}{
-			"error":        err.Error(),
-			"admin_email":  adminEmail,
-			"customer_id":  customer.ID,
-			"license_key":  license.Key,
+			"error":       err.Error(),
+			"admin_email": adminEmail,
+			"customer_id": customer.ID,
+			"license_key": license.Key,
 		})
 		return
 	}
