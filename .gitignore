@@ -5,3 +5,4 @@ mise.toml
 storage/data
 coverage*
 stripe/
+auto-focus-cloud
