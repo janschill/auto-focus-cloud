@@ -13,6 +13,7 @@ import (
 
 	"auto-focus.app/cloud/internal/logger"
 	"auto-focus.app/cloud/models"
+	"github.com/getsentry/sentry-go"
 )
 
 type LicenseRequest struct {
@@ -62,6 +63,7 @@ func (s *Server) ValidateLicense(w http.ResponseWriter, r *http.Request) {
 
 	license, err := s.Storage.FindLicenseByKey(ctx, req.LicenseKey)
 	if err != nil {
+		sentry.CaptureException(err)
 		logger.Error("Error while fetch license", map[string]interface{}{
 			"error": err.Error(),
 		})
@@ -100,6 +102,7 @@ func respondWithValidation(w http.ResponseWriter, valid bool, message string) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
+		sentry.CaptureException(err)
 		logger.Error("Failed to encode validation response", map[string]interface{}{
 			"error": err.Error(),
 		})
@@ -138,6 +141,7 @@ func writeErrorResponse(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(map[string]string{"error": message}); err != nil {
+		sentry.CaptureException(err)
 		logger.Error("Failed to encode error response", map[string]interface{}{
 			"error": err.Error(),
 		})

@@ -13,6 +13,7 @@ import (
 	"auto-focus.app/cloud/internal/email"
 	"auto-focus.app/cloud/internal/logger"
 	"auto-focus.app/cloud/models"
+	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
@@ -38,6 +39,7 @@ func (s *Server) Stripe(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, MaxBodyBytes)
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
+		sentry.CaptureException(err)
 		logger.Error("Failed to read webhook payload", map[string]interface{}{
 			"error": err.Error(),
 		})
@@ -77,6 +79,7 @@ func (s *Server) Stripe(w http.ResponseWriter, r *http.Request) {
 		signatureHeader := r.Header.Get("Stripe-Signature")
 		event, err = webhook.ConstructEvent(payload, signatureHeader, endpointSecret)
 		if err != nil {
+			sentry.CaptureException(err)
 			logger.Error("Webhook signature verification failed", map[string]interface{}{
 				"error":     err.Error(),
 				"signature": signatureHeader,
@@ -97,6 +100,7 @@ func (s *Server) Stripe(w http.ResponseWriter, r *http.Request) {
 		var checkoutSession stripe.CheckoutSession
 		err := json.Unmarshal(event.Data.Raw, &checkoutSession)
 		if err != nil {
+			sentry.CaptureException(err)
 			logger.Error("Failed to unmarshal checkout session", map[string]interface{}{
 				"error":    err.Error(),
 				"event_id": event.ID,
@@ -106,6 +110,7 @@ func (s *Server) Stripe(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err = s.handleCheckoutComplete(ctx, &checkoutSession); err != nil {
+			sentry.CaptureException(err)
 			logger.Error("Failed to handle checkout completion", map[string]interface{}{
 				"error":      err.Error(),
 				"session_id": checkoutSession.ID,
@@ -167,6 +172,7 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 
 	customer, license, err := s.createLicensedUser(ctx, session, customerEmail)
 	if err != nil {
+		sentry.CaptureException(err)
 		logger.Error("Failed to create licensed user", map[string]interface{}{
 			"error":      err.Error(),
 			"session_id": session.ID,
@@ -179,6 +185,9 @@ func (s *Server) handleCheckoutComplete(ctx context.Context, session *stripe.Che
 		"customer_email": customer.Email,
 		"session_id":     session.ID,
 	})
+
+	// Send admin notification about new signup
+	s.sendAdminSignupNotification(ctx, customer, license, session)
 
 	// Create personalized email content
 	customerName := "there"
@@ -420,4 +429,74 @@ func formatPrice(amountCents int64, currency string) string {
 	default:
 		return fmt.Sprintf("%.2f %s", amount, strings.ToUpper(currency))
 	}
+}
+
+// sendAdminSignupNotification sends an admin notification about new user signups
+func (s *Server) sendAdminSignupNotification(ctx context.Context, customer *models.Customer, license *models.License, session *stripe.CheckoutSession) {
+	adminEmail := os.Getenv("ADMIN_EMAIL")
+	if adminEmail == "" {
+		logger.Debug("ADMIN_EMAIL not configured, skipping admin notification")
+		return
+	}
+
+	// Create notification content
+	customerName := customer.Name
+	if customerName == "" {
+		customerName = "Unknown"
+	}
+
+	formattedPrice := formatPrice(license.PricePaid, license.Currency)
+	
+	subject := "🎉 New Auto-Focus+ Purchase"
+	body := fmt.Sprintf(`New customer signup alert!
+
+CUSTOMER DETAILS
+Name: %s
+Email: %s
+Country: %s
+Stripe Customer: %s
+
+PURCHASE DETAILS
+License Key: %s
+Product: %s (%s)
+Amount: %s
+Session ID: %s
+
+TIMING
+Purchased: %s
+
+---
+Sent from Auto-Focus Cloud API`, 
+		customerName,
+		customer.Email,
+		customer.Country,
+		customer.StripeCustomerID,
+		license.Key,
+		license.ProductName,
+		license.Version,
+		formattedPrice,
+		session.ID,
+		license.CreatedAt.Format("2006-01-02 15:04:05 UTC"),
+	)
+
+	// Send the notification email
+	err := email.Send(adminEmail, subject, body)
+	if err != nil {
+		sentry.CaptureException(err)
+		logger.Error("Failed to send admin signup notification", map[string]interface{}{
+			"error":        err.Error(),
+			"admin_email":  adminEmail,
+			"customer_id":  customer.ID,
+			"license_key":  license.Key,
+		})
+		return
+	}
+
+	logger.Info("Admin signup notification sent", map[string]interface{}{
+		"admin_email":    adminEmail,
+		"customer_email": customer.Email,
+		"customer_name":  customerName,
+		"license_key":    license.Key,
+		"amount":         formattedPrice,
+	})
 }

@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"auto-focus.app/cloud/internal/logger"
 	"auto-focus.app/cloud/internal/ratelimit"
 	"auto-focus.app/cloud/storage"
+	"github.com/getsentry/sentry-go"
 )
 
 type Server struct {
@@ -33,13 +36,47 @@ func NewHttpServer(db storage.Storage) *Server {
 	return s
 }
 
+type HealthResponse struct {
+	Status      string `json:"status"`
+	Timestamp   string `json:"timestamp"`
+	Environment string `json:"environment"`
+	Database    string `json:"database"`
+}
+
 func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
 	logger.Debug("Health check requested", map[string]interface{}{
 		"remote_addr": r.RemoteAddr,
 	})
 
+	// Test database connectivity
+	dbStatus := "ok"
+	_, err := s.Storage.GetCustomer(ctx, "health-check-test")
+	if err != nil {
+		sentry.CaptureException(err)
+		logger.Error("Database health check failed", map[string]interface{}{
+			"error": err.Error(),
+		})
+		dbStatus = "error"
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
+
+	environment := os.Getenv("ENVIRONMENT")
+	if environment == "" {
+		environment = "production"
+	}
+
+	response := HealthResponse{
+		Status:      dbStatus,
+		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+		Environment: environment,
+		Database:    dbStatus,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		sentry.CaptureException(err)
 		logger.Error("Failed to encode health response", map[string]interface{}{
 			"error": err.Error(),
 		})
