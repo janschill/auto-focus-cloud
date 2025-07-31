@@ -111,6 +111,20 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Check if tag already exists
+        if git tag -l "${{ env.VERSION }}" | grep -q "${{ env.VERSION }}"; then
+          echo "Tag ${{ env.VERSION }} already exists locally, deleting it"
+          git tag -d ${{ env.VERSION }}
+        fi
+        
+        # Check if tag exists on remote
+        if git ls-remote --tags origin | grep -q "refs/tags/${{ env.VERSION }}$"; then
+          echo "Tag ${{ env.VERSION }} already exists on remote, deleting it"
+          git push --delete origin ${{ env.VERSION }} || true
+        fi
+        
+        # Create and push new tag
         git tag ${{ env.VERSION }}
         git push origin ${{ env.VERSION }}
         
